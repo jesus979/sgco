@@ -12,3 +12,6 @@ python-decouple==3.8
 
 # Reportes PDF
 reportlab==5.0.1
+
+# Driver PostgreSQL (recomendado en producción; SQLite sigue funcionando)
+psycopg[binary]==3.2.3

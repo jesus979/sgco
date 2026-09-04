@@ -195,6 +195,63 @@ def crear_uso_maquinaria_con_gasto(*, obra, maquinaria, fecha, horas,
 @transaction.atomic
 def anular_gasto(gasto: GastoObra):
     """Anula un gasto sin borrarlo (regla: no borrar físicamente)."""
+    if gasto.estado == EstadoGastoChoices.ANULADO:
+        return gasto
     gasto.estado = EstadoGastoChoices.ANULADO
     gasto.save(update_fields=['estado', 'updated_at'])
     return gasto
+
+
+# ---------------------------------------------------------------------------
+# Cálculo masivo (evita N+1 en dashboards y listados)
+# ---------------------------------------------------------------------------
+def resumen_financiero_obras(obras_qs=None):
+    """Devuelve un dict {obra_id: {'asignado': D, 'gastado': D, 'saldo': D, 'porcentaje': D}}
+    para el queryset de obras dado (o todas si es None).
+
+    Usa agregaciones en SQL (1 query por total) en vez de N queries.
+    """
+    from django.db.models import Sum, F, DecimalField
+    from django.db.models.functions import Coalesce
+    from apps.fondos.models import AsignacionFondo
+
+    if obras_qs is None:
+        from apps.obras.models import Obra
+        obras_qs = Obra.objects.all()
+
+    obra_ids = list(obras_qs.values_list('id', flat=True))
+
+    asignado_qs = (
+        AsignacionFondo.objects
+        .filter(obra_id__in=obra_ids, anulada=False)
+        .values('obra_id')
+        .annotate(total=Coalesce(Sum('monto'), Decimal('0.00'), output_field=DecimalField()))
+    )
+    gastado_qs = (
+        GastoObra.objects
+        .filter(obra_id__in=obra_ids, estado=EstadoGastoChoices.APROBADO)
+        .values('obra_id')
+        .annotate(total=Coalesce(Sum('monto'), Decimal('0.00'), output_field=DecimalField()))
+    )
+
+    resultado = {oid: {
+        'asignado': Decimal('0.00'),
+        'gastado': Decimal('0.00'),
+        'saldo': Decimal('0.00'),
+        'porcentaje': Decimal('0.00'),
+    } for oid in obra_ids}
+
+    for row in asignado_qs:
+        resultado[row['obra_id']]['asignado'] = row['total']
+    for row in gastado_qs:
+        resultado[row['obra_id']]['gastado'] = row['total']
+
+    for oid in obra_ids:
+        a = resultado[oid]['asignado']
+        g = resultado[oid]['gastado']
+        resultado[oid]['saldo'] = a - g
+        resultado[oid]['porcentaje'] = (
+            (g / a * Decimal('100')) if a > 0 else Decimal('0.00')
+        )
+
+    return resultado

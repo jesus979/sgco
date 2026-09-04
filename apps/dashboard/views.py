@@ -6,6 +6,7 @@ from decimal import Decimal
 from apps.obras.models import Obra
 from apps.fondos.models import AsignacionFondo
 from apps.finanzas.models import GastoObra
+from apps.finanzas.services import resumen_financiero_obras
 from apps.core.choices import (
     EstadoObraChoices,
     EstadoGastoChoices,
@@ -19,9 +20,13 @@ class DashboardView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
 
-        # ----- KPIs globales ------------------------------------------
+        obras = Obra.objects.all()
+        obras_activas_qs = obras.exclude(estado=EstadoObraChoices.CULMINADA)
+
+        # Una sola pasada de agregaciones para el global
         total_asignado_global = (
-            AsignacionFondo.objects.aggregate(s=Sum('monto'))['s']
+            AsignacionFondo.objects.filter(anulada=False)
+            .aggregate(s=Sum('monto'))['s']
             or Decimal('0.00')
         )
         total_gastado_global = (
@@ -31,63 +36,57 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             or Decimal('0.00')
         )
         saldo_global = total_asignado_global - total_gastado_global
-        if total_asignado_global > 0:
-            porcentaje_global = (
-                (total_gastado_global / total_asignado_global) * Decimal('100')
-            )
-        else:
-            porcentaje_global = Decimal('0.00')
+        porcentaje_global = (
+            (total_gastado_global / total_asignado_global * Decimal('100'))
+            if total_asignado_global > 0 else Decimal('0.00')
+        )
 
-        obras_activas_qs = Obra.objects.exclude(estado=EstadoObraChoices.CULMINADA)
+        # Resumen por obra: UNA sola query agregada en lugar de 4N
+        resumen = resumen_financiero_obras(obras)
 
         ctx.update({
-            'total_obras': Obra.objects.count(),
+            'total_obras': obras.count(),
             'obras_activas': obras_activas_qs.count(),
-            'obras_ejecucion': Obra.objects.filter(estado=EstadoObraChoices.EN_EJECUCION).count(),
-            'obras_planificacion': Obra.objects.filter(estado=EstadoObraChoices.PLANIFICACION).count(),
-            'obras_culminadas': Obra.objects.filter(estado=EstadoObraChoices.CULMINADA).count(),
+            'obras_ejecucion': obras.filter(estado=EstadoObraChoices.EN_EJECUCION).count(),
+            'obras_planificacion': obras.filter(estado=EstadoObraChoices.PLANIFICACION).count(),
+            'obras_culminadas': obras.filter(estado=EstadoObraChoices.CULMINADA).count(),
 
             'total_asignado_global': total_asignado_global,
             'total_gastado_global': total_gastado_global,
             'saldo_global': saldo_global,
             'porcentaje_global': porcentaje_global,
 
-            # ----- Obras con resumen financiero ------------------------
-            'obras_resumen': self._obras_resumen(),
+            'obras_resumen': self._obras_resumen(obras, resumen),
 
-            # ----- Últimos gastos --------------------------------------
             'ultimos_gastos': (
                 GastoObra.objects
                 .select_related('obra')
                 .order_by('-fecha', '-id')[:8]
             ),
 
-            # ----- Distribución por tipo -------------------------------
             'gastos_por_tipo': self._gastos_por_tipo(),
 
-            # ----- Datos para Chart.js ----------------------------------
             'gastos_por_tipo_chart': self._gastos_por_tipo_chart(),
             'obras_por_estado_chart': self._obras_por_estado_chart(),
         })
         return ctx
 
-    def _obras_resumen(self):
-        """Una fila por obra con totales financieros."""
-        from apps.finanzas.services import (
-            total_asignado, total_gastado, saldo, porcentaje_ejecucion,
-        )
+    def _obras_resumen(self, obras_qs, resumen):
+        """Una fila por obra con totales financieros (sin N+1)."""
         rows = []
-        for obra in Obra.objects.all():
-            a = total_asignado(obra)
-            g = total_gastado(obra)
-            s = saldo(obra)
-            p = porcentaje_ejecucion(obra)
+        for obra in obras_qs:
+            data = resumen.get(obra.id, {
+                'asignado': Decimal('0.00'),
+                'gastado': Decimal('0.00'),
+                'saldo': Decimal('0.00'),
+                'porcentaje': Decimal('0.00'),
+            })
             rows.append({
                 'obra': obra,
-                'asignado': a,
-                'gastado': g,
-                'saldo': s,
-                'porcentaje': p,
+                'asignado': data['asignado'],
+                'gastado': data['gastado'],
+                'saldo': data['saldo'],
+                'porcentaje': data['porcentaje'],
                 'estado_badge': self._estado_badge(obra.estado),
             })
         return rows

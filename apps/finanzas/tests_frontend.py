@@ -6,8 +6,10 @@ Verifica:
 - El filtro por obra funciona.
 - La acción "Anular" cambia el estado.
 """
+import uuid
 from decimal import Decimal
 from datetime import date
+
 from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth.models import User
@@ -29,8 +31,7 @@ class SmokeFrontendTests(TestCase):
 
     def setUp(self):
         self.client.login(username='tester', password='x')
-        self.obra = Obra.objects.create(
-            nombre='Obra Smoke',
+        self.obra = Obra.objects.create(codigo=f'OBR-TEST-{uuid.uuid4().hex[:8]}', nombre='Obra Smoke',
             ubicacion='CDMX',
             fecha_inicio=date(2026, 1, 1),
             fecha_fin_estimada=date(2026, 12, 31),
@@ -70,8 +71,7 @@ class SmokeFrontendTests(TestCase):
 
     def test_fondos_list_filtro_obra(self):
         # Crear otra obra y asignación para distinguir
-        otra = Obra.objects.create(
-            nombre='Otra Obra', ubicacion='Y',
+        otra = Obra.objects.create(codigo=f'OBR-TEST-{uuid.uuid4().hex[:8]}', nombre='Otra Obra', ubicacion='Y',
             fecha_inicio=date(2026, 3, 1),
             fecha_fin_estimada=date(2026, 6, 30),
         )
@@ -158,3 +158,5 @@ class SmokeFrontendTests(TestCase):
         for url in ['/obras/', '/fondos/', '/finanzas/gastos/', '/finanzas/otros/']:
             r = self.client.get(url)
             self.assertIn(r.status_code, (302, 301), f'{url} debería redirigir a login')
+
+

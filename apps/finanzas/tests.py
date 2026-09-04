@@ -1,5 +1,7 @@
+import uuid
 from decimal import Decimal
 from datetime import date
+
 from django.test import TestCase
 from django.contrib.auth.models import User
 from apps.obras.models import Obra
@@ -31,8 +33,7 @@ from apps.maquinaria.models import Maquinaria
 class FinanzasServicesTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username='u', password='x')
-        self.obra = Obra.objects.create(
-            nombre='Obra A',
+        self.obra = Obra.objects.create(codigo=f'OBR-TEST-{uuid.uuid4().hex[:8]}', nombre='Obra A',
             ubicacion='CDMX',
             fecha_inicio=date(2026, 1, 1),
             fecha_fin_estimada=date(2026, 12, 31),
@@ -220,8 +221,7 @@ class FinanzasServicesTests(TestCase):
 
 class ConstraintsTests(TestCase):
     def setUp(self):
-        self.obra = Obra.objects.create(
-            nombre='Obra', ubicacion='X',
+        self.obra = Obra.objects.create(codigo=f'OBR-TEST-{uuid.uuid4().hex[:8]}', nombre='Obra', ubicacion='X',
             fecha_inicio=date(2026, 1, 1),
             fecha_fin_estimada=date(2026, 12, 31),
         )
@@ -249,3 +249,5 @@ class ConstraintsTests(TestCase):
         InventarioObra.objects.create(obra=self.obra, material=self.material)
         with self.assertRaises(IntegrityError):
             InventarioObra.objects.create(obra=self.obra, material=self.material)
+
+

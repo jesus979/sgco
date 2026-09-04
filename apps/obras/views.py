@@ -48,14 +48,22 @@ class ObraListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
+        from apps.finanzas.services import resumen_financiero_obras
+        resumen = resumen_financiero_obras(ctx['object_list'])
         rows = []
         for obra in ctx['object_list']:
+            data = resumen.get(obra.id, {
+                'asignado': Decimal('0.00'),
+                'gastado': Decimal('0.00'),
+                'saldo': Decimal('0.00'),
+                'porcentaje': Decimal('0.00'),
+            })
             rows.append({
                 'obra': obra,
-                'asignado': total_asignado(obra),
-                'gastado': total_gastado(obra),
-                'saldo': saldo(obra),
-                'porcentaje': porcentaje_ejecucion(obra),
+                'asignado': data['asignado'],
+                'gastado': data['gastado'],
+                'saldo': data['saldo'],
+                'porcentaje': data['porcentaje'],
             })
         ctx['rows'] = rows
         ctx['model_name'] = 'Obra'
@@ -114,11 +122,19 @@ class ObraDetailView(LoginRequiredMixin, DetailView):
         ctx = super().get_context_data(**kwargs)
         obra = self.object
 
-        # ----- KPIs financieros (servicios) ---------------------------
-        ctx['total_asignado'] = total_asignado(obra)
-        ctx['total_gastado'] = total_gastado(obra)
-        ctx['saldo'] = saldo(obra)
-        ctx['porcentaje'] = porcentaje_ejecucion(obra)
+        # ----- KPIs financieros (servicio de resumen agregado) ---------
+        from apps.finanzas.services import resumen_financiero_obras
+        resumen = resumen_financiero_obras(Obra.objects.filter(pk=obra.pk))
+        datos = resumen.get(obra.pk, {
+            'asignado': Decimal('0.00'),
+            'gastado': Decimal('0.00'),
+            'saldo': Decimal('0.00'),
+            'porcentaje': Decimal('0.00'),
+        })
+        ctx['total_asignado'] = datos['asignado']
+        ctx['total_gastado'] = datos['gastado']
+        ctx['saldo'] = datos['saldo']
+        ctx['porcentaje'] = datos['porcentaje']
 
         # ----- Fondos -------------------------------------------------
         from apps.fondos.models import AsignacionFondo

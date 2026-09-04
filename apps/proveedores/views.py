@@ -156,9 +156,14 @@ class FacturaListView(LoginRequiredMixin, ListView):
 
 
 class FacturaCreateView(LoginRequiredMixin, CreateView):
+    """Crear factura.
+
+    La factura SIEMPRE crea su propio GastoObra vía el servicio
+    `crear_gasto_con_factura`. El usuario NO puede seleccionar un
+    GastoObra existente. Por eso excluimos `gasto` del form.
+    """
     model = FacturaProveedor
-    fields = ['obra', 'proveedor', 'gasto', 'folio', 'fecha_emision',
-              'impuesto', 'total', 'estado']
+    fields = ['obra', 'proveedor', 'folio', 'fecha_emision', 'impuesto', 'total', 'estado']
     template_name = 'sgco/_form_page.html'
 
     def get_initial(self):
@@ -167,6 +172,32 @@ class FacturaCreateView(LoginRequiredMixin, CreateView):
         if obra_id:
             initial['obra'] = obra_id
         return initial
+
+    def form_valid(self, form):
+        from apps.finanzas.services import crear_gasto_con_factura
+        from apps.core.choices import (
+            EstadoGastoChoices as EC,
+            EstadoFacturaChoices as EF,
+            TipoGastoChoices as TG,
+        )
+        _gasto, factura = crear_gasto_con_factura(
+            obra=form.cleaned_data['obra'],
+            proveedor=form.cleaned_data['proveedor'],
+            folio=form.cleaned_data['folio'],
+            fecha_emision=form.cleaned_data['fecha_emision'],
+            total=form.cleaned_data['total'],
+            impuesto=form.cleaned_data['impuesto'] or Decimal('0.00'),
+            descripcion=f'Factura {form.cleaned_data["folio"]} - {form.cleaned_data["proveedor"].nombre}',
+            tipo_gasto=TG.MATERIAL,
+            estado=EC.BORRADOR,
+            estado_factura=form.cleaned_data['estado'],
+        )
+        # Asignar usuario al gasto (no en la factura, que no lo tiene)
+        _gasto.usuario = self.request.user
+        _gasto.save(update_fields=['usuario', 'updated_at'])
+        # Reemplazar el save por defecto: la factura ya está creada
+        self.object = factura
+        return self.response_class()
 
     def get_success_url(self):
         obra_id = self.request.GET.get('obra') or self.request.POST.get('obra')
@@ -183,8 +214,7 @@ class FacturaCreateView(LoginRequiredMixin, CreateView):
 
 class FacturaUpdateView(LoginRequiredMixin, UpdateView):
     model = FacturaProveedor
-    fields = ['obra', 'proveedor', 'gasto', 'folio', 'fecha_emision',
-              'impuesto', 'total', 'estado']
+    fields = ['obra', 'proveedor', 'folio', 'fecha_emision', 'impuesto', 'total', 'estado']
     template_name = 'sgco/_form_page.html'
     success_url = reverse_lazy('proveedores:factura_list')
 
@@ -193,6 +223,12 @@ class FacturaUpdateView(LoginRequiredMixin, UpdateView):
         ctx['model_name'] = 'Factura'
         ctx['is_update'] = True
         return ctx
+
+
+# NOTA: FacturaProveedor NO se borra físicamente si tiene un
+# GastoObra aprobado. El admin/protección de BD ya lo impide. Si
+# realmente se necesita "eliminar" una factura errónea, se debe
+# primero anular su GastoObra asociado.
 
 
 class FacturaDeleteView(LoginRequiredMixin, DeleteView):

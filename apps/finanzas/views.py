@@ -62,7 +62,7 @@ class GastoObraListView(LoginRequiredMixin, ListView):
 
 class GastoObraCreateView(LoginRequiredMixin, CreateView):
     model = GastoObra
-    fields = ['obra', 'fecha', 'tipo_gasto', 'descripcion', 'monto', 'estado']
+    fields = ['obra', 'fecha', 'tipo_gasto', 'concepto', 'descripcion', 'monto', 'estado']
     template_name = 'sgco/_form_page.html'
 
     def get_initial(self):
@@ -71,6 +71,11 @@ class GastoObraCreateView(LoginRequiredMixin, CreateView):
         if obra_id:
             initial['obra'] = obra_id
         return initial
+
+    def form_valid(self, form):
+        # Asignamos automáticamente el usuario autenticado
+        form.instance.usuario = self.request.user
+        return super().form_valid(form)
 
     def get_success_url(self):
         obra_id = self.request.GET.get('obra') or self.request.POST.get('obra')
@@ -87,7 +92,7 @@ class GastoObraCreateView(LoginRequiredMixin, CreateView):
 
 class GastoObraUpdateView(LoginRequiredMixin, UpdateView):
     model = GastoObra
-    fields = ['obra', 'fecha', 'tipo_gasto', 'descripcion', 'monto', 'estado']
+    fields = ['obra', 'fecha', 'tipo_gasto', 'concepto', 'descripcion', 'monto', 'estado']
     template_name = 'sgco/_form_page.html'
     success_url = reverse_lazy('finanzas:gasto_list')
 
@@ -98,15 +103,8 @@ class GastoObraUpdateView(LoginRequiredMixin, UpdateView):
         return ctx
 
 
-class GastoObraDeleteView(LoginRequiredMixin, DeleteView):
-    model = GastoObra
-    template_name = 'sgco/_delete.html'
-    success_url = reverse_lazy('finanzas:gasto_list')
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx['model_name'] = 'Gasto de Obra'
-        return ctx
+# NOTA: GastoObra NO se borra físicamente. Solo se anula vía
+# GastoObraAnularView (POST). Esta es la regla financiera de la spec.
 
 
 class GastoObraDetailView(LoginRequiredMixin, DetailView):
@@ -117,7 +115,6 @@ class GastoObraDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         g = self.object
-        # Documentos origen posibles (solo uno estará presente)
         ctx['factura'] = getattr(g, 'factura_proveedor', None)
         ctx['nomina'] = getattr(g, 'nomina', None)
         ctx['uso_maquinaria'] = getattr(g, 'uso_maquinaria', None)
@@ -177,7 +174,7 @@ class OtroGastoListView(LoginRequiredMixin, ListView):
 
 class OtroGastoCreateView(LoginRequiredMixin, CreateView):
     model = OtroGasto
-    fields = ['obra', 'gasto', 'fecha', 'concepto', 'comprobante', 'proveedor', 'observaciones']
+    fields = ['obra', 'fecha', 'concepto', 'comprobante', 'proveedor', 'observaciones']
     template_name = 'sgco/_form_page.html'
 
     def get_initial(self):
@@ -186,6 +183,32 @@ class OtroGastoCreateView(LoginRequiredMixin, CreateView):
         if obra_id:
             initial['obra'] = obra_id
         return initial
+
+    def form_valid(self, form):
+        # Crear el GastoObra asociado y vincularlo
+        obra = form.cleaned_data['obra']
+        fecha = form.cleaned_data['fecha']
+        concepto = form.cleaned_data['concepto']
+        from apps.core.choices import EstadoGastoChoices as EC, TipoGastoChoices as TC
+        from .services import crear_otro_gasto
+        gasto, _otro = crear_otro_gasto(
+            obra=obra,
+            fecha=fecha,
+            concepto=concepto,
+            comprobante=form.cleaned_data.get('comprobante', ''),
+            proveedor=form.cleaned_data.get('proveedor'),
+            observaciones=form.cleaned_data.get('observaciones', ''),
+            tipo_gasto=TC.OTROS,
+            monto=Decimal('0.00'),
+            estado=EC.BORRADOR,
+        )
+        # Actualizar el gasto con la info de usuario
+        gasto.usuario = self.request.user
+        gasto.save(update_fields=['usuario', 'updated_at'])
+        # Sobrescribir el save por defecto: en lugar de crear OtroGasto nuevo,
+        # vinculamos al recién creado.
+        form.instance = _otro  # ya tiene gasto asociado
+        return super().form_valid(form)
 
     def get_success_url(self):
         obra_id = self.request.GET.get('obra') or self.request.POST.get('obra')
@@ -202,7 +225,7 @@ class OtroGastoCreateView(LoginRequiredMixin, CreateView):
 
 class OtroGastoUpdateView(LoginRequiredMixin, UpdateView):
     model = OtroGasto
-    fields = ['obra', 'gasto', 'fecha', 'concepto', 'comprobante', 'proveedor', 'observaciones']
+    fields = ['fecha', 'concepto', 'comprobante', 'proveedor', 'observaciones']
     template_name = 'sgco/_form_page.html'
     success_url = reverse_lazy('finanzas:otro_list')
 
@@ -213,15 +236,8 @@ class OtroGastoUpdateView(LoginRequiredMixin, UpdateView):
         return ctx
 
 
-class OtroGastoDeleteView(LoginRequiredMixin, DeleteView):
-    model = OtroGasto
-    template_name = 'sgco/_delete.html'
-    success_url = reverse_lazy('finanzas:otro_list')
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx['model_name'] = 'Otro Gasto'
-        return ctx
+# NOTA: OtroGasto NO se borra físicamente. Solo se anula vía
+# OtroGastoAnularView (POST), que anula el GastoObra subyacente.
 
 
 class OtroGastoAnularView(LoginRequiredMixin, View):

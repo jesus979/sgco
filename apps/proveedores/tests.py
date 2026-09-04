@@ -1,5 +1,7 @@
+import uuid
 from decimal import Decimal
 from datetime import date
+
 from django.test import TestCase
 from django.core.exceptions import ValidationError
 from apps.obras.models import Obra
@@ -16,8 +18,7 @@ from .services import (
 
 class FacturaConsistenciaTests(TestCase):
     def setUp(self):
-        self.obra = Obra.objects.create(
-            nombre='Obra', ubicacion='X',
+        self.obra = Obra.objects.create(codigo=f'OBR-TEST-{uuid.uuid4().hex[:8]}', nombre='Obra', ubicacion='X',
             fecha_inicio=date(2026, 1, 1),
             fecha_fin_estimada=date(2026, 12, 31),
         )
@@ -95,3 +96,5 @@ class FacturaConsistenciaTests(TestCase):
         self.assertEqual(f.subtotal, Decimal('1200'))
         self.assertEqual(f.total, Decimal('1250.00'))
         self.assertTrue(verificar_consistencia_factura(f))
+
+

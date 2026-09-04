@@ -1,6 +1,8 @@
 """Smoke tests para los módulos Proveedores / Inventario / Personal / Maquinaria."""
+import uuid
 from decimal import Decimal
 from datetime import date
+
 from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth.models import User
@@ -24,8 +26,7 @@ class ProveedoresFrontendTests(TestCase):
 
     def setUp(self):
         self.client.login(username='t', password='x')
-        self.obra = Obra.objects.create(
-            nombre='Obra', ubicacion='X',
+        self.obra = Obra.objects.create(codigo=f'OBR-TEST-{uuid.uuid4().hex[:8]}', nombre='Obra', ubicacion='X',
             fecha_inicio=date(2026, 1, 1),
             fecha_fin_estimada=date(2026, 12, 31),
         )
@@ -108,8 +109,7 @@ class InventarioFrontendTests(TestCase):
 
     def setUp(self):
         self.client.login(username='t', password='x')
-        self.obra = Obra.objects.create(
-            nombre='Obra', ubicacion='X',
+        self.obra = Obra.objects.create(codigo=f'OBR-TEST-{uuid.uuid4().hex[:8]}', nombre='Obra', ubicacion='X',
             fecha_inicio=date(2026, 1, 1),
             fecha_fin_estimada=date(2026, 12, 31),
         )
@@ -173,8 +173,7 @@ class PersonalFrontendTests(TestCase):
 
     def setUp(self):
         self.client.login(username='t', password='x')
-        self.obra = Obra.objects.create(
-            nombre='Obra', ubicacion='X',
+        self.obra = Obra.objects.create(codigo=f'OBR-TEST-{uuid.uuid4().hex[:8]}', nombre='Obra', ubicacion='X',
             fecha_inicio=date(2026, 1, 1),
             fecha_fin_estimada=date(2026, 12, 31),
         )
@@ -240,8 +239,7 @@ class MaquinariaFrontendTests(TestCase):
 
     def setUp(self):
         self.client.login(username='t', password='x')
-        self.obra = Obra.objects.create(
-            nombre='Obra', ubicacion='X',
+        self.obra = Obra.objects.create(codigo=f'OBR-TEST-{uuid.uuid4().hex[:8]}', nombre='Obra', ubicacion='X',
             fecha_inicio=date(2026, 1, 1),
             fecha_fin_estimada=date(2026, 12, 31),
         )
@@ -277,3 +275,5 @@ class MaquinariaFrontendTests(TestCase):
         g.refresh_from_db()
         from apps.core.choices import EstadoGastoChoices as EC
         self.assertEqual(g.estado, EC.ANULADO)
+
+

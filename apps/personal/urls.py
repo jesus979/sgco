@@ -14,7 +14,6 @@ urlpatterns = [
     path('nominas/nueva/', views.NominaCreateView.as_view(), name='nomina_create'),
     path('nominas/<int:pk>/', views.NominaDetailView.as_view(), name='nomina_detail'),
     path('nominas/<int:pk>/editar/', views.NominaUpdateView.as_view(), name='nomina_update'),
-    path('nominas/<int:pk>/eliminar/', views.NominaDeleteView.as_view(), name='nomina_delete'),
     path('nominas/<int:pk>/recalcular/', views.NominaRecalcularView.as_view(), name='nomina_recalcular'),
     path('nominas/<int:pk>/anular/', views.NominaAnularView.as_view(), name='nomina_anular'),
 

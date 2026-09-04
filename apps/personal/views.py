@@ -133,8 +133,12 @@ class NominaListView(LoginRequiredMixin, ListView):
 
 
 class NominaCreateView(LoginRequiredMixin, CreateView):
+    """Crear nómina. El GastoObra se crea automáticamente vía servicio.
+
+    Por eso `gasto` no está en el form.
+    """
     model = Nomina
-    fields = ['obra', 'gasto', 'fecha', 'periodo_desde', 'periodo_hasta']
+    fields = ['obra', 'fecha', 'periodo_desde', 'periodo_hasta']
     template_name = 'sgco/_form_page.html'
 
     def get_initial(self):
@@ -159,7 +163,7 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
 
 class NominaUpdateView(LoginRequiredMixin, UpdateView):
     model = Nomina
-    fields = ['obra', 'gasto', 'fecha', 'periodo_desde', 'periodo_hasta']
+    fields = ['obra', 'fecha', 'periodo_desde', 'periodo_hasta']
     template_name = 'sgco/_form_page.html'
     success_url = reverse_lazy('personal:nomina_list')
 
@@ -170,15 +174,8 @@ class NominaUpdateView(LoginRequiredMixin, UpdateView):
         return ctx
 
 
-class NominaDeleteView(LoginRequiredMixin, DeleteView):
-    model = Nomina
-    template_name = 'sgco/_delete.html'
-    success_url = reverse_lazy('personal:nomina_list')
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx['model_name'] = 'Nómina'
-        return ctx
+# NOTA: Nomina NO se borra físicamente. Se anula vía NominaAnularView
+# (que anula el GastoObra subyacente).
 
 
 class NominaDetailView(LoginRequiredMixin, DetailView):
@@ -298,3 +295,18 @@ class NominaDetalleDeleteView(LoginRequiredMixin, DeleteView):
         ctx = super().get_context_data(**kwargs)
         ctx['model_name'] = 'Detalle de Nómina'
         return ctx
+
+    def form_valid(self, form):
+        # Regla: no se puede eliminar un detalle si la nómina está aprobada.
+        # Si está aprobada, se debe anular la nómina completa.
+        nomina = self.get_object().nomina
+        if nomina.gasto.estado == 'APROBADO':
+            from django.contrib import messages
+            from django.shortcuts import redirect
+            messages.error(
+                self.request,
+                f'No se puede eliminar el detalle porque la nómina #{nomina.pk} está APROBADA. '
+                'Anule la nómina completa en su lugar.',
+            )
+            return redirect('personal:nomina_detalle_list')
+        return super().form_valid(form)

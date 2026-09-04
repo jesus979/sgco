@@ -125,8 +125,12 @@ class UsoListView(LoginRequiredMixin, ListView):
 
 
 class UsoCreateView(LoginRequiredMixin, CreateView):
+    """Crear uso de maquinaria. El GastoObra se crea automáticamente vía servicio.
+
+    Por eso `gasto` no está en el form.
+    """
     model = UsoMaquinaria
-    fields = ['obra', 'maquinaria', 'gasto', 'fecha', 'horas']
+    fields = ['obra', 'maquinaria', 'fecha', 'horas']
     template_name = 'sgco/_form_page.html'
 
     def get_initial(self):
@@ -151,7 +155,7 @@ class UsoCreateView(LoginRequiredMixin, CreateView):
 
 class UsoUpdateView(LoginRequiredMixin, UpdateView):
     model = UsoMaquinaria
-    fields = ['obra', 'maquinaria', 'gasto', 'fecha', 'horas']
+    fields = ['obra', 'maquinaria', 'fecha', 'horas']
     template_name = 'sgco/_form_page.html'
     success_url = reverse_lazy('maquinaria:uso_list')
 
@@ -162,15 +166,7 @@ class UsoUpdateView(LoginRequiredMixin, UpdateView):
         return ctx
 
 
-class UsoDeleteView(LoginRequiredMixin, DeleteView):
-    model = UsoMaquinaria
-    template_name = 'sgco/_delete.html'
-    success_url = reverse_lazy('maquinaria:uso_list')
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx['model_name'] = 'Uso de Maquinaria'
-        return ctx
+# NOTA: UsoMaquinaria NO se borra físicamente. Se anula vía UsoAnularView.
 
 
 class UsoAnularView(LoginRequiredMixin, View):

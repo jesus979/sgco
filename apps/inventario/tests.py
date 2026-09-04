@@ -1,5 +1,7 @@
+import uuid
 from decimal import Decimal
 from datetime import date
+
 from django.test import TestCase
 from django.contrib.auth.models import User
 from django.db import transaction, IntegrityError
@@ -18,13 +20,11 @@ from .services import (
 class InventarioServicesTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username='op', password='x')
-        self.obra = Obra.objects.create(
-            nombre='Obra', ubicacion='X',
+        self.obra = Obra.objects.create(codigo=f'OBR-TEST-{uuid.uuid4().hex[:8]}', nombre='Obra', ubicacion='X',
             fecha_inicio=date(2026, 1, 1),
             fecha_fin_estimada=date(2026, 12, 31),
         )
-        self.obra_b = Obra.objects.create(
-            nombre='Obra B', ubicacion='Y',
+        self.obra_b = Obra.objects.create(codigo=f'OBR-TEST-{uuid.uuid4().hex[:8]}', nombre='Obra B', ubicacion='Y',
             fecha_inicio=date(2026, 1, 1),
             fecha_fin_estimada=date(2026, 12, 31),
         )
@@ -105,3 +105,5 @@ class InventarioServicesTests(TestCase):
         )
         inv.refresh_from_db()
         self.assertEqual(inv.cantidad_actual, Decimal('10'))
+
+

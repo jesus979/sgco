@@ -13,6 +13,5 @@ urlpatterns = [
     path('usos/', views.UsoListView.as_view(), name='uso_list'),
     path('usos/nuevo/', views.UsoCreateView.as_view(), name='uso_create'),
     path('usos/<int:pk>/editar/', views.UsoUpdateView.as_view(), name='uso_update'),
-    path('usos/<int:pk>/eliminar/', views.UsoDeleteView.as_view(), name='uso_delete'),
     path('usos/<int:pk>/anular/', views.UsoAnularView.as_view(), name='uso_anular'),
 ]

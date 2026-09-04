@@ -1,5 +1,7 @@
+import uuid
 from decimal import Decimal
 from datetime import date
+
 from django.test import TestCase
 from django.db import IntegrityError
 from apps.obras.models import Obra
@@ -10,8 +12,7 @@ from .services import recalcular_total_nomina
 
 class NominaTests(TestCase):
     def setUp(self):
-        self.obra = Obra.objects.create(
-            nombre='Obra', ubicacion='X',
+        self.obra = Obra.objects.create(codigo=f'OBR-TEST-{uuid.uuid4().hex[:8]}', nombre='Obra', ubicacion='X',
             fecha_inicio=date(2026, 1, 1),
             fecha_fin_estimada=date(2026, 12, 31),
         )
@@ -70,3 +71,5 @@ class NominaTests(TestCase):
 
         nomina.gasto.refresh_from_db()
         self.assertEqual(nomina.gasto.monto, Decimal('9999'))
+
+

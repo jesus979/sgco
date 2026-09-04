@@ -92,6 +92,7 @@ class Command(BaseCommand):
     def _obras(self):
         return [
             Obra.objects.create(
+                codigo='OBR-001',
                 nombre='Edificio Residencial Las Palmas',
                 ubicacion='Caracas, Distrito Capital',
                 fecha_inicio=date(2026, 1, 15),
@@ -99,6 +100,7 @@ class Command(BaseCommand):
                 estado=EstadoObraChoices.EN_EJECUCION,
             ),
             Obra.objects.create(
+                codigo='OBR-002',
                 nombre='Puente Vial Av. Bolívar',
                 ubicacion='Maracaibo, Zulia',
                 fecha_inicio=date(2026, 3, 1),
@@ -106,6 +108,7 @@ class Command(BaseCommand):
                 estado=EstadoObraChoices.EN_EJECUCION,
             ),
             Obra.objects.create(
+                codigo='OBR-003',
                 nombre='Centro Comercial Plaza Norte',
                 ubicacion='Valencia, Carabobo',
                 fecha_inicio=date(2025, 11, 10),
@@ -113,6 +116,7 @@ class Command(BaseCommand):
                 estado=EstadoObraChoices.PAUSADA,
             ),
             Obra.objects.create(
+                codigo='OBR-004',
                 nombre='Rehabilitación Escuela Simón Bolívar',
                 ubicacion='Barquisimeto, Lara',
                 fecha_inicio=date(2026, 5, 5),
@@ -120,6 +124,7 @@ class Command(BaseCommand):
                 estado=EstadoObraChoices.PLANIFICACION,
             ),
             Obra.objects.create(
+                codigo='OBR-005',
                 nombre='Planta de Tratamiento Aguas Residuales',
                 ubicacion='Maracay, Aragua',
                 fecha_inicio=date(2025, 8, 1),

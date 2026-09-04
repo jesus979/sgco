@@ -1,5 +1,7 @@
+import uuid
 from decimal import Decimal
 from datetime import date
+
 from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth.models import User
@@ -23,8 +25,7 @@ class ReportePDFTests(TestCase):
 
     def setUp(self):
         self.client.login(username='tester', password='x')
-        self.obra = Obra.objects.create(
-            nombre='Obra PDF Test',
+        self.obra = Obra.objects.create(codigo=f'OBR-TEST-{uuid.uuid4().hex[:8]}', nombre='Obra PDF Test',
             ubicacion='CDMX',
             fecha_inicio=date(2026, 1, 1),
             fecha_fin_estimada=date(2026, 12, 31),
@@ -80,8 +81,7 @@ class ReportePDFTests(TestCase):
 
     def test_pdf_service_con_obra_vacia(self):
         from apps.obras.pdf import generar_reporte_obra
-        obra_vacia = Obra.objects.create(
-            nombre='Obra Vacía',
+        obra_vacia = Obra.objects.create(codigo=f'OBR-TEST-{uuid.uuid4().hex[:8]}', nombre='Obra Vacía',
             ubicacion='X',
             fecha_inicio=date(2026, 1, 1),
             fecha_fin_estimada=date(2026, 12, 31),
@@ -98,8 +98,7 @@ class DashboardChartsTests(TestCase):
 
     def setUp(self):
         self.client.login(username='t', password='x')
-        self.obra = Obra.objects.create(
-            nombre='O', ubicacion='X',
+        self.obra = Obra.objects.create(codigo=f'OBR-TEST-{uuid.uuid4().hex[:8]}', nombre='O', ubicacion='X',
             fecha_inicio=date(2026, 1, 1),
             fecha_fin_estimada=date(2026, 12, 31),
         )
@@ -125,3 +124,5 @@ class DashboardChartsTests(TestCase):
         self.assertContains(r, 'chartGastosTipo')
         self.assertContains(r, 'chartObrasEstado')
         self.assertContains(r, 'chart.js')
+
+

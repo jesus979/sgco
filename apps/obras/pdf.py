@@ -12,9 +12,7 @@ from reportlab.platypus import (
     SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak,
 )
 
-from apps.finanzas.services import (
-    total_asignado, total_gastado, saldo, porcentaje_ejecucion,
-)
+from apps.finanzas.services import resumen_financiero_obras
 from apps.fondos.models import AsignacionFondo
 from apps.finanzas.models import GastoObra
 from apps.proveedores.models import FacturaProveedor
@@ -70,10 +68,17 @@ def generar_reporte_obra(obra, usuario=None) -> bytes:
     ))
 
     # ---------- KPIs FINANCIEROS ----------
-    ta = total_asignado(obra)
-    tg = total_gastado(obra)
-    s = saldo(obra)
-    p = porcentaje_ejecucion(obra)
+    resumen = resumen_financiero_obras(__import__('apps.obras.models', fromlist=['Obra']).Obra.objects.filter(pk=obra.pk))
+    datos = resumen.get(obra.pk, {
+        'asignado': Decimal('0.00'),
+        'gastado': Decimal('0.00'),
+        'saldo': Decimal('0.00'),
+        'porcentaje': Decimal('0.00'),
+    })
+    ta = datos['asignado']
+    tg = datos['gastado']
+    s = datos['saldo']
+    p = datos['porcentaje']
 
     kpi_data = [
         ['Total Asignado', 'Total Gastado (APROBADO)', 'Saldo Disponible', '% Ejecución'],

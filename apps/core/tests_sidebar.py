@@ -1,4 +1,5 @@
 """Smoke tests del nuevo layout: sidebar + header + resaltado activo."""
+import uuid
 from decimal import Decimal
 from datetime import date
 from django.test import TestCase
@@ -11,8 +12,7 @@ class SidebarLayoutTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.user = User.objects.create_user(username='t', password='x')
-        cls.obra = Obra.objects.create(
-            nombre='Obra Test', ubicacion='X',
+        cls.obra = Obra.objects.create(codigo=f'OBR-TEST-{uuid.uuid4().hex[:8]}', nombre='Obra Test', ubicacion='X',
             fecha_inicio=date(2026, 1, 1),
             fecha_fin_estimada=date(2026, 12, 31),
         )
@@ -110,3 +110,5 @@ class SidebarLayoutTests(TestCase):
         self.assertContains(r, 'href="/personal/nominas/detalles/"')
         self.assertContains(r, 'href="/maquinaria/"')
         self.assertContains(r, 'href="/maquinaria/usos/"')
+
+

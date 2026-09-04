@@ -48,3 +48,14 @@ class TipoMovimientoMaterialChoices(models.TextChoices):
     TRANSFERENCIA = 'TRANSFERENCIA', 'Transferencia'
     DEVOLUCION = 'DEVOLUCION', 'Devolución'
     AJUSTE = 'AJUSTE', 'Ajuste'
+
+
+class MonedaChoices(models.TextChoices):
+    MXN = 'MXN', 'MXN — Peso mexicano'
+    USD = 'USD', 'USD — Dólar estadounidense'
+    COP = 'COP', 'COP — Peso colombiano'
+    VES = 'VES', 'VES — Bolívar venezolano'
+    EUR = 'EUR', 'EUR — Euro'
+    ARS = 'ARS', 'ARS — Peso argentino'
+    BOB = 'BOB', 'BOB — Boliviano'
+    CLP = 'CLP', 'CLP — Peso chileno'
