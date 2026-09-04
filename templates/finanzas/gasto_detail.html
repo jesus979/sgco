@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}Gasto #{{ gasto.pk }} · SGCO{% endblock %}
+
+{% block content %}
+<div class="mb-4 flex items-center justify-between">
+  <div>
+    <h1 class="text-2xl font-semibold text-base-900">Gasto #{{ gasto.pk }}</h1>
+    <p class="text-sm text-base-500">
+      <a href="{% url 'obras:detail' gasto.obra_id %}" class="hover:underline">{{ gasto.obra.nombre }}</a>
+      · {{ gasto.get_tipo_gasto_display }} · {{ gasto.fecha|date:"d/m/Y" }}
+    </p>
+  </div>
+  <div class="flex gap-2">
+    <a href="{% url 'finanzas:gasto_update' gasto.pk %}" class="px-3 py-2 border border-base-200 rounded hover:bg-base-50">
+      <i class="ti ti-edit"></i> Editar
+    </a>
+    <a href="{% url 'finanzas:gasto_list' %}?obra={{ gasto.obra_id }}" class="px-3 py-2 border border-base-200 rounded hover:bg-base-50">
+      ← Volver al listado
+    </a>
+  </div>
+</div>
+
+<!-- Resumen del gasto -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="bg-white border border-base-200 rounded-xl p-5">
+    <div class="text-sm text-base-500">Monto</div>
+    <div class="mt-2 text-2xl font-semibold text-base-900">${{ gasto.monto|floatformat:2|intcomma }}</div>
+  </div>
+  <div class="bg-white border border-base-200 rounded-xl p-5">
+    <div class="text-sm text-base-500">Estado</div>
+    <div class="mt-2">
+      {% if gasto.estado == 'APROBADO' %}
+        <span class="px-3 py-1 rounded text-sm font-medium bg-emerald-100 text-emerald-800">Aprobado</span>
+      {% elif gasto.estado == 'BORRADOR' %}
+        <span class="px-3 py-1 rounded text-sm font-medium bg-amber-100 text-amber-800">Borrador</span>
+      {% else %}
+        <span class="px-3 py-1 rounded text-sm font-medium bg-rose-100 text-rose-800">Anulado</span>
+      {% endif %}
+    </div>
+  </div>
+  <div class="bg-white border border-base-200 rounded-xl p-5">
+    <div class="text-sm text-base-500">Tipo</div>
+    <div class="mt-2 text-lg font-medium text-base-900">{{ gasto.get_tipo_gasto_display }}</div>
+  </div>
+  <div class="bg-white border border-base-200 rounded-xl p-5">
+    <div class="text-sm text-base-500">Acción</div>
+    <div class="mt-2">
+      {% if gasto.estado != 'ANULADO' %}
+      <form method="post" action="{% url 'finanzas:gasto_anular' gasto.pk %}?obra={{ gasto.obra_id }}">
+        {% csrf_token %}
+        <button class="inline-flex items-center gap-1 px-3 py-2 text-rose-700 border border-rose-200 rounded hover:bg-rose-50"
+                onclick="return confirm('¿Anular este gasto? Dejará de afectar el saldo de la obra.')">
+          <i class="ti ti-ban"></i> Anular gasto
+        </button>
+      </form>
+      {% else %}
+      <span class="text-sm text-base-400">Sin acciones disponibles</span>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Documento origen -->
+<div class="bg-white border border-base-200 rounded-xl overflow-hidden mb-6">
+  <div class="px-5 py-3 border-b border-base-200">
+    <h2 class="font-semibold text-base-900">Documento origen</h2>
+  </div>
+  <div class="p-5">
+    {% if factura %}
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-sm text-base-500">Factura de proveedor</div>
+          <div class="text-lg font-medium text-base-900">
+            {{ factura.folio }} · {{ factura.proveedor.nombre }}
+          </div>
+          <div class="text-xs text-base-500 mt-1">
+            Emisión {{ factura.fecha_emision|date:"d/m/Y" }} ·
+            Total ${{ factura.total|floatformat:2|intcomma }}
+            (impuesto ${{ factura.impuesto|floatformat:2|intcomma }})
+          </div>
+        </div>
+        <a href="{% url 'proveedores:factura_list' %}?obra={{ gasto.obra_id }}"
+           class="text-primary-600 hover:underline text-sm">
+          Ver facturas de la obra →
+        </a>
+      </div>
+    {% elif nomina %}
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-sm text-base-500">Nómina</div>
+          <div class="text-lg font-medium text-base-900">
+            Periodo {{ nomina.periodo_desde|date:"d/m/Y" }} → {{ nomina.periodo_hasta|date:"d/m/Y" }}
+          </div>
+          <div class="text-xs text-base-500 mt-1">
+            {{ nomina.nominas_detalle.count }} empleado{{ nomina.nominas_detalle.count|pluralize:"s" }}
+          </div>
+        </div>
+        <a href="{% url 'personal:nomina_list' %}?obra={{ gasto.obra_id }}"
+           class="text-primary-600 hover:underline text-sm">
+          Ver nóminas de la obra →
+        </a>
+      </div>
+    {% elif uso_maquinaria %}
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-sm text-base-500">Uso de maquinaria</div>
+          <div class="text-lg font-medium text-base-900">
+            {{ uso_maquinaria.maquinaria.nombre }} · {{ uso_maquinaria.horas }} h
+          </div>
+          <div class="text-xs text-base-500 mt-1">
+            {{ uso_maquinaria.fecha|date:"d/m/Y" }} ·
+            Costo/hora ${{ uso_maquinaria.maquinaria.costo_hora|floatformat:2|intcomma }}
+          </div>
+        </div>
+        <a href="{% url 'maquinaria:uso_list' %}?obra={{ gasto.obra_id }}"
+           class="text-primary-600 hover:underline text-sm">
+          Ver usos de la obra →
+        </a>
+      </div>
+    {% elif otro_gasto %}
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-sm text-base-500">Otro gasto</div>
+          <div class="text-lg font-medium text-base-900">{{ otro_gasto.concepto }}</div>
+          <div class="text-xs text-base-500 mt-1">
+            {{ otro_gasto.fecha|date:"d/m/Y" }}
+            {% if otro_gasto.comprobante %}· Comprobante {{ otro_gasto.comprobante }}{% endif %}
+            {% if otro_gasto.proveedor %}· {{ otro_gasto.proveedor.nombre }}{% endif %}
+          </div>
+        </div>
+        <a href="{% url 'finanzas:otro_list' %}?obra={{ gasto.obra_id }}"
+           class="text-primary-600 hover:underline text-sm">
+          Ver otros gastos de la obra →
+        </a>
+      </div>
+    {% else %}
+      <p class="text-sm text-base-400">Este gasto no tiene un documento origen asociado (gasto manual).</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Descripción / observaciones -->
+<div class="bg-white border border-base-200 rounded-xl overflow-hidden mb-6">
+  <div class="px-5 py-3 border-b border-base-200">
+    <h2 class="font-semibold text-base-900">Detalle</h2>
+  </div>
+  <div class="p-5 space-y-2 text-sm">
+    <div><span class="text-base-500">Descripción:</span> {{ gasto.descripcion|default:"—" }}</div>
+    <div><span class="text-base-500">Fecha del gasto:</span> {{ gasto.fecha|date:"d/m/Y" }}</div>
+    <div><span class="text-base-500">Creado en:</span> {{ gasto.created_at|date:"d/m/Y H:i" }}</div>
+    <div><span class="text-base-500">Última actualización:</span> {{ gasto.updated_at|date:"d/m/Y H:i" }}</div>
+  </div>
+</div>
+
+{% endblock %}

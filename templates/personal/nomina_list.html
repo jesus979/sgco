@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% load humanize sgco_extras %}
+{% block title %}Nóminas · SGCO{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-4">
+  <div>
+    <h1 class="text-2xl font-semibold text-base-900">Nóminas</h1>
+    <p class="text-sm text-base-500">
+      {{ paginator.count }} nómina{{ paginator.count|pluralize:"s" }}
+      {% if obra_filtro %} · filtrando por <strong>{{ obra_filtro.nombre }}</strong>{% endif %}
+    </p>
+  </div>
+  <div class="flex gap-2">
+    <a href="{% url 'personal:nomina_list' %}"
+       class="px-3 py-2 border border-base-200 rounded hover:bg-base-50 {% if not obra_filtro %}bg-base-100{% endif %}">
+      Todas
+    </a>
+    {% if obra_filtro %}
+      <a href="{% url 'obras:detail' obra_filtro.pk %}"
+         class="inline-flex items-center gap-1 px-3 py-2 border border-base-200 rounded hover:bg-base-50">
+        <i class="ti ti-arrow-left"></i> Volver a la obra
+      </a>
+    {% endif %}
+    <a href="{% url 'personal:nomina_create' %}{% if obra_filtro %}?obra={{ obra_filtro.pk }}{% endif %}"
+       class="inline-flex items-center gap-1 px-3 py-2 bg-primary-600 text-white rounded hover:bg-primary-700">
+      <i class="ti ti-plus"></i> Nueva nómina
+    </a>
+  </div>
+</div>
+
+<div class="bg-white border border-base-200 rounded-xl overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-base-50 text-base-600">
+      <tr>
+        <th class="text-left px-4 py-2 font-medium">Fecha</th>
+        <th class="text-left px-4 py-2 font-medium">Obra</th>
+        <th class="text-left px-4 py-2 font-medium">Periodo</th>
+        <th class="text-right px-4 py-2 font-medium">Monto gasto</th>
+        <th class="text-left px-4 py-2 font-medium">Estado gasto</th>
+        <th class="text-right px-4 py-2 font-medium">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for n in object_list %}
+      <tr class="border-t border-base-100 hover:bg-base-50 {% if n.gasto.estado == 'ANULADO' %}opacity-60{% endif %}">
+        <td class="px-4 py-2">{{ n.fecha|date:"d/m/Y" }}</td>
+        <td class="px-4 py-2">
+          <a href="{% url 'obras:detail' n.obra_id %}" class="text-primary-600 hover:underline">{{ n.obra.nombre }}</a>
+        </td>
+        <td class="px-4 py-2 text-base-600">{{ n.periodo_desde|date:"d/m/Y" }} → {{ n.periodo_hasta|date:"d/m/Y" }}</td>
+        <td class="px-4 py-2 text-right font-semibold">${{ n.gasto.monto|floatformat:2|intcomma }}</td>
+        <td class="px-4 py-2">
+          {% if n.gasto.estado == 'APROBADO' %}
+            <span class="px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800">Aprobado</span>
+          {% elif n.gasto.estado == 'BORRADOR' %}
+            <span class="px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">Borrador</span>
+          {% else %}
+            <span class="px-2 py-0.5 rounded text-xs font-medium bg-rose-100 text-rose-800">Anulado</span>
+          {% endif %}
+        </td>
+        <td class="px-4 py-2 text-right whitespace-nowrap">
+          {% if n.gasto.estado != 'ANULADO' %}
+            <a href="{% url 'personal:nomina_detail' n.pk %}"
+               class="inline-flex items-center px-2 py-1 text-primary-600 hover:bg-primary-50 rounded" title="Ver detalle">
+              <i class="ti ti-eye text-base"></i>
+            </a>
+            <a href="{% url 'personal:nomina_update' n.pk %}"
+               class="inline-flex items-center px-2 py-1 text-blue-600 hover:bg-blue-50 rounded" title="Editar">
+              <i class="ti ti-edit text-base"></i>
+            </a>
+            <form method="post" action="{% url 'personal:nomina_anular' n.pk %}" class="inline">
+              {% csrf_token %}
+              <button type="submit"
+                      class="inline-flex items-center px-2 py-1 text-amber-600 hover:bg-amber-50 rounded"
+                      title="Anular"
+                      onclick="return confirm('¿Anular esta nómina?')">
+                <i class="ti ti-ban text-base"></i>
+              </button>
+            </form>
+          {% else %}
+            <span class="text-base-400 text-xs">—</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="px-4 py-6 text-center text-base-400">Sin nóminas</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% include 'sgco/_pagination.html' %}
+{% endblock %}

@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}{{ material.nombre }} · SGCO{% endblock %}
+
+{% block content %}
+<div class="mb-4 flex items-center justify-between">
+  <div>
+    <h1 class="text-2xl font-semibold text-base-900">{{ material.nombre }}</h1>
+    <p class="text-sm text-base-500">
+      {{ material.get_unidad_display }} · {{ material.categoria }} · Precio ref. ${{ material.precio_unitario_referencia|floatformat:2|intcomma }}
+    </p>
+  </div>
+  <div class="flex gap-2">
+    <a href="{% url 'inventario:material_update' material.pk %}" class="px-3 py-2 border border-base-200 rounded hover:bg-base-50">
+      <i class="ti ti-edit"></i> Editar
+    </a>
+    <a href="{% url 'inventario:material_list' %}" class="px-3 py-2 border border-base-200 rounded hover:bg-base-50">
+      ← Volver
+    </a>
+  </div>
+</div>
+
+<!-- KPIs -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+  <div class="bg-white border border-base-200 rounded-xl p-5">
+    <div class="text-sm text-base-500">Stock total (todas las obras)</div>
+    <div class="mt-2 text-2xl font-semibold text-base-900">{{ total_stock }} {{ material.get_unidad_display }}</div>
+  </div>
+  <div class="bg-white border border-base-200 rounded-xl p-5">
+    <div class="text-sm text-base-500">Obras con stock</div>
+    <div class="mt-2 text-2xl font-semibold text-base-900">{{ inventarios|length }}</div>
+  </div>
+  <div class="bg-white border border-base-200 rounded-xl p-5">
+    <div class="text-sm text-base-500">Estado</div>
+    <div class="mt-2">
+      {% if material.activo %}
+        <span class="px-3 py-1 rounded text-sm font-medium bg-emerald-100 text-emerald-800">Activo</span>
+      {% else %}
+        <span class="px-3 py-1 rounded text-sm font-medium bg-slate-200 text-slate-700">Inactivo</span>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Stock por obra -->
+<div class="bg-white border border-base-200 rounded-xl overflow-hidden mb-6">
+  <div class="px-5 py-3 border-b border-base-200">
+    <h2 class="font-semibold text-base-900">Stock por obra</h2>
+  </div>
+  <table class="w-full text-sm">
+    <thead class="bg-base-50 text-base-600">
+      <tr>
+        <th class="text-left px-4 py-2 font-medium">Obra</th>
+        <th class="text-right px-4 py-2 font-medium">Cantidad actual</th>
+        <th class="text-left px-4 py-2 font-medium">Actualizado</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for inv in inventarios %}
+      <tr class="border-t border-base-100 hover:bg-base-50">
+        <td class="px-4 py-2">
+          <a href="{% url 'obras:detail' inv.obra_id %}" class="text-primary-600 hover:underline">{{ inv.obra.nombre }}</a>
+        </td>
+        <td class="px-4 py-2 text-right font-semibold">{{ inv.cantidad_actual }} {{ material.get_unidad_display }}</td>
+        <td class="px-4 py-2 text-base-500">{{ inv.updated_at|date:"d/m/Y H:i" }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="3" class="px-4 py-6 text-center text-base-400">Sin inventario registrado</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Últimos movimientos -->
+<div class="bg-white border border-base-200 rounded-xl overflow-hidden">
+  <div class="px-5 py-3 border-b border-base-200">
+    <h2 class="font-semibold text-base-900">Últimos movimientos</h2>
+  </div>
+  <table class="w-full text-sm">
+    <thead class="bg-base-50 text-base-600">
+      <tr>
+        <th class="text-left px-4 py-2 font-medium">Fecha</th>
+        <th class="text-left px-4 py-2 font-medium">Obra</th>
+        <th class="text-left px-4 py-2 font-medium">Tipo</th>
+        <th class="text-right px-4 py-2 font-medium">Cantidad</th>
+        <th class="text-left px-4 py-2 font-medium">Usuario</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in ultimos_movimientos %}
+      <tr class="border-t border-base-100">
+        <td class="px-4 py-2">{{ m.fecha|date:"d/m/Y" }}</td>
+        <td class="px-4 py-2">
+          <a href="{% url 'obras:detail' m.obra_id %}" class="text-primary-600 hover:underline">{{ m.obra.nombre }}</a>
+        </td>
+        <td class="px-4 py-2">
+          {% if m.tipo == 'ENTRADA' %}
+            <span class="px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800">Entrada</span>
+          {% elif m.tipo == 'SALIDA' %}
+            <span class="px-2 py-0.5 rounded text-xs font-medium bg-rose-100 text-rose-800">Salida</span>
+          {% else %}
+            <span class="px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700">{{ m.get_tipo_display }}</span>
+          {% endif %}
+        </td>
+        <td class="px-4 py-2 text-right font-semibold">{{ m.cantidad }}</td>
+        <td class="px-4 py-2 text-base-600">{{ m.usuario.username }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="px-4 py-6 text-center text-base-400">Sin movimientos</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}{{ maquinaria.nombre }} · SGCO{% endblock %}
+
+{% block content %}
+<div class="mb-4 flex items-center justify-between">
+  <div>
+    <h1 class="text-2xl font-semibold text-base-900">{{ maquinaria.nombre }}</h1>
+    <p class="text-sm text-base-500">
+      {{ maquinaria.marca|default:"—" }} {{ maquinaria.modelo|default:"" }}
+      · {{ maquinaria.identificacion|default:"—" }}
+      · ${{ maquinaria.costo_hora|floatformat:2|intcomma }}/h
+    </p>
+  </div>
+  <div class="flex gap-2">
+    <a href="{% url 'maquinaria:maquinaria_update' maquinaria.pk %}" class="px-3 py-2 border border-base-200 rounded hover:bg-base-50">
+      <i class="ti ti-edit"></i> Editar
+    </a>
+    <a href="{% url 'maquinaria:maquinaria_list' %}" class="px-3 py-2 border border-base-200 rounded hover:bg-base-50">
+      ← Volver
+    </a>
+  </div>
+</div>
+
+<!-- KPIs -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+  <div class="bg-white border border-base-200 rounded-xl p-5">
+    <div class="text-sm text-base-500">Total horas</div>
+    <div class="mt-2 text-2xl font-semibold text-base-900">{{ total_horas|floatformat:2|intcomma }} h</div>
+  </div>
+  <div class="bg-white border border-base-200 rounded-xl p-5">
+    <div class="text-sm text-base-500">Costo total acumulado</div>
+    <div class="mt-2 text-2xl font-semibold text-base-900">${{ total_costo|floatformat:2|intcomma }}</div>
+  </div>
+  <div class="bg-white border border-base-200 rounded-xl p-5">
+    <div class="text-sm text-base-500">Estado</div>
+    <div class="mt-2">
+      {% if maquinaria.activo %}
+        <span class="px-3 py-1 rounded text-sm font-medium bg-emerald-100 text-emerald-800">Activo</span>
+      {% else %}
+        <span class="px-3 py-1 rounded text-sm font-medium bg-slate-200 text-slate-700">Inactivo</span>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Usos -->
+<div class="bg-white border border-base-200 rounded-xl overflow-hidden">
+  <div class="px-5 py-3 border-b border-base-200 flex items-center justify-between">
+    <h2 class="font-semibold text-base-900">Usos</h2>
+    <a href="{% url 'maquinaria:uso_list' %}" class="text-sm text-primary-600 hover:underline">Ver todos</a>
+  </div>
+  <table class="w-full text-sm">
+    <thead class="bg-base-50 text-base-600">
+      <tr>
+        <th class="text-left px-4 py-2 font-medium">Fecha</th>
+        <th class="text-left px-4 py-2 font-medium">Obra</th>
+        <th class="text-right px-4 py-2 font-medium">Horas</th>
+        <th class="text-right px-4 py-2 font-medium">Costo</th>
+        <th class="text-left px-4 py-2 font-medium">Estado gasto</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in usos %}
+      <tr class="border-t border-base-100 hover:bg-base-50 {% if u.gasto.estado == 'ANULADO' %}opacity-60{% endif %}">
+        <td class="px-4 py-2">{{ u.fecha|date:"d/m/Y" }}</td>
+        <td class="px-4 py-2">
+          <a href="{% url 'obras:detail' u.obra_id %}" class="text-primary-600 hover:underline">{{ u.obra.nombre }}</a>
+        </td>
+        <td class="px-4 py-2 text-right font-semibold">{{ u.horas }} h</td>
+        <td class="px-4 py-2 text-right">${{ u.gasto.monto|floatformat:2|intcomma }}</td>
+        <td class="px-4 py-2">
+          {% if u.gasto.estado == 'APROBADO' %}
+            <span class="px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800">Aprobado</span>
+          {% elif u.gasto.estado == 'BORRADOR' %}
+            <span class="px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">Borrador</span>
+          {% else %}
+            <span class="px-2 py-0.5 rounded text-xs font-medium bg-rose-100 text-rose-800">Anulado</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="px-4 py-6 text-center text-base-400">Sin usos registrados</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

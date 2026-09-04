@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Entorno virtual
+venv/
+env/
+ENV/
+.venv/
+
+# Django
+*.log
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+
+# Entorno local
+.env
+.env.local
+.env.*.local
+
+# IDEs y editores
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Tests y coverage
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+
+# Backups
+*.bak
+*.tmp
+
+# Estáticos generados
+node_modules/

@@ -1,0 +1,253 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}Dashboard · SGCO{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex items-end justify-between">
+  <div>
+    <h1 class="text-3xl font-semibold text-base-900">Panel principal</h1>
+    <p class="text-sm text-base-500">
+      Resumen general de obras, fondos, gastos y trazabilidad.
+    </p>
+  </div>
+  <div class="text-sm text-base-500">
+    {{ total_obras }} obra{{ total_obras|pluralize:"s" }} · {{ obras_activas }} activa{{ obras_activas|pluralize:"s" }}
+  </div>
+</div>
+
+<!-- ============================== KPIs ============================== -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="bg-white border border-base-200 rounded-xl p-5">
+    <div class="flex items-center justify-between">
+      <span class="text-sm text-base-500">Obras en ejecución</span>
+      <i class="ti ti-bulldozer text-emerald-500 text-xl"></i>
+    </div>
+    <div class="mt-2 text-3xl font-semibold text-base-900">{{ obras_ejecucion }}</div>
+    <div class="text-xs text-base-500 mt-1">{{ obras_planificacion }} en planificación · {{ obras_culminadas }} culminadas</div>
+  </div>
+
+  <div class="bg-white border border-base-200 rounded-xl p-5">
+    <div class="flex items-center justify-between">
+      <span class="text-sm text-base-500">Total asignado</span>
+      <i class="ti ti-coin text-blue-500 text-xl"></i>
+    </div>
+    <div class="mt-2 text-3xl font-semibold text-base-900">${{ total_asignado_global|floatformat:2|intcomma }}</div>
+    <div class="text-xs text-base-500 mt-1">Suma de asignaciones de fondo</div>
+  </div>
+
+  <div class="bg-white border border-base-200 rounded-xl p-5">
+    <div class="flex items-center justify-between">
+      <span class="text-sm text-base-500">Total gastado (APROBADO)</span>
+      <i class="ti ti-receipt text-rose-500 text-xl"></i>
+    </div>
+    <div class="mt-2 text-3xl font-semibold text-base-900">${{ total_gastado_global|floatformat:2|intcomma }}</div>
+    <div class="text-xs text-base-500 mt-1">Saldo: ${{ saldo_global|floatformat:2|intcomma }}</div>
+  </div>
+
+  <div class="bg-white border border-base-200 rounded-xl p-5">
+    <div class="flex items-center justify-between">
+      <span class="text-sm text-base-500">% de ejecución global</span>
+      <i class="ti ti-chart-bar text-violet-500 text-xl"></i>
+    </div>
+    <div class="mt-2 text-3xl font-semibold text-base-900">{{ porcentaje_global|floatformat:2 }}%</div>
+    <div class="w-full bg-base-100 rounded-full h-2 mt-3">
+      <div class="bg-violet-500 h-2 rounded-full" style="width: {{ porcentaje_global }}%"></div>
+    </div>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <!-- ============================ OBRAS ============================ -->
+  <div class="lg:col-span-2 bg-white border border-base-200 rounded-xl overflow-hidden">
+    <div class="px-5 py-3 border-b border-base-200 flex items-center justify-between">
+      <h2 class="font-semibold text-base-900">Obras</h2>
+      <a href="{% url 'obras:list' %}" class="text-sm text-primary-600 hover:underline">Ver todas</a>
+    </div>
+    <table class="w-full text-sm">
+      <thead class="bg-base-50 text-base-600">
+        <tr>
+          <th class="text-left px-4 py-2 font-medium">Obra</th>
+          <th class="text-left px-4 py-2 font-medium">Estado</th>
+          <th class="text-right px-4 py-2 font-medium">Asignado</th>
+          <th class="text-right px-4 py-2 font-medium">Gastado</th>
+          <th class="text-right px-4 py-2 font-medium">Saldo</th>
+          <th class="text-right px-4 py-2 font-medium">% Ejec.</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in obras_resumen %}
+        <tr class="border-t border-base-100 hover:bg-base-50">
+          <td class="px-4 py-2">
+            <div class="font-medium text-base-900">{{ row.obra.nombre }}</div>
+            <div class="text-xs text-base-500">{{ row.obra.ubicacion }}</div>
+          </td>
+          <td class="px-4 py-2">
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ row.estado_badge }}">
+              {{ row.obra.get_estado_display }}
+            </span>
+          </td>
+          <td class="px-4 py-2 text-right">${{ row.asignado|floatformat:0|intcomma }}</td>
+          <td class="px-4 py-2 text-right">${{ row.gastado|floatformat:0|intcomma }}</td>
+          <td class="px-4 py-2 text-right font-semibold">${{ row.saldo|floatformat:0|intcomma }}</td>
+          <td class="px-4 py-2 text-right">
+            <div class="flex items-center justify-end gap-2">
+              <span>{{ row.porcentaje|floatformat:1 }}%</span>
+              <div class="w-16 bg-base-100 rounded-full h-1.5">
+                <div class="bg-emerald-500 h-1.5 rounded-full" style="width: {{ row.porcentaje }}%"></div>
+              </div>
+            </div>
+          </td>
+          <td class="px-4 py-2 text-right">
+            <a href="{% url 'obras:detail' row.obra.pk %}" class="text-primary-600 hover:underline">Ver</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="px-4 py-6 text-center text-base-400">No hay obras registradas</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ====================== DISTRIBUCIÓN POR TIPO ====================== -->
+  <div class="bg-white border border-base-200 rounded-xl overflow-hidden">
+    <div class="px-5 py-3 border-b border-base-200">
+      <h2 class="font-semibold text-base-900">Distribución por tipo (APROBADO)</h2>
+    </div>
+    <div class="p-5 space-y-3">
+      {% for row in gastos_por_tipo %}
+      <div>
+        <div class="flex justify-between text-sm">
+          <span class="text-base-700">{{ row.label }}</span>
+          <span class="text-base-500">${{ row.total|floatformat:0|intcomma }} · {{ row.porcentaje|floatformat:1 }}%</span>
+        </div>
+        <div class="w-full bg-base-100 rounded-full h-2 mt-1">
+          <div class="bg-primary-500 h-2 rounded-full" style="width: {{ row.porcentaje }}%"></div>
+        </div>
+      </div>
+      {% empty %}
+      <p class="text-sm text-base-400">Sin gastos aprobados.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- ====================== GRÁFICOS ====================== -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+  <div class="bg-white border border-base-200 rounded-xl overflow-hidden">
+    <div class="px-5 py-3 border-b border-base-200">
+      <h2 class="font-semibold text-base-900">Gastos aprobados por tipo</h2>
+    </div>
+    <div class="p-5">
+      <canvas id="chartGastosTipo" height="120"></canvas>
+    </div>
+  </div>
+
+  <div class="bg-white border border-base-200 rounded-xl overflow-hidden">
+    <div class="px-5 py-3 border-b border-base-200">
+      <h2 class="font-semibold text-base-900">Obras por estado</h2>
+    </div>
+    <div class="p-5">
+      <canvas id="chartObrasEstado" height="120"></canvas>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% verbatim %}
+<script>
+  // Datos inyectados desde la vista
+  const gastosTipoData = {{ gastos_por_tipo_chart.values|safe|default:"[]" }};
+  const gastosTipoLabels = {{ gastos_por_tipo_chart.labels|safe|default:"[]" }};
+  const obrasEstadoData = {{ obras_por_estado_chart.values|safe|default:"[]" }};
+  const obrasEstadoLabels = {{ obras_por_estado_chart.labels|safe|default:"[]" }};
+
+  // Gráfico de barras: gastos por tipo
+  if (document.getElementById('chartGastosTipo')) {
+    new Chart(document.getElementById('chartGastosTipo'), {
+      type: 'bar',
+      data: {
+        labels: gastosTipoLabels,
+        datasets: [{
+          label: 'Monto ($)',
+          data: gastosTipoData,
+          backgroundColor: '#0e1219',
+          borderRadius: 6,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, ticks: { callback: v => '$' + v.toLocaleString() } },
+        },
+      },
+    });
+  }
+
+  // Gráfico de dona: obras por estado
+  if (document.getElementById('chartObrasEstado')) {
+    new Chart(document.getElementById('chartObrasEstado'), {
+      type: 'doughnut',
+      data: {
+        labels: obrasEstadoLabels,
+        datasets: [{
+          data: obrasEstadoData,
+          backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#94a3b8'],
+          borderWidth: 2,
+          borderColor: '#fff',
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom' } },
+      },
+    });
+  }
+</script>
+{% endverbatim %}
+
+<!-- ====================== ÚLTIMOS GASTOS ====================== -->
+<div class="bg-white border border-base-200 rounded-xl overflow-hidden mt-6">
+  <div class="px-5 py-3 border-b border-base-200 flex items-center justify-between">
+    <h2 class="font-semibold text-base-900">Últimos gastos</h2>
+    <a href="{% url 'finanzas:gasto_list' %}" class="text-sm text-primary-600 hover:underline">Ver todos</a>
+  </div>
+  <table class="w-full text-sm">
+    <thead class="bg-base-50 text-base-600">
+      <tr>
+        <th class="text-left px-4 py-2 font-medium">Fecha</th>
+        <th class="text-left px-4 py-2 font-medium">Obra</th>
+        <th class="text-left px-4 py-2 font-medium">Tipo</th>
+        <th class="text-right px-4 py-2 font-medium">Monto</th>
+        <th class="text-left px-4 py-2 font-medium">Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for g in ultimos_gastos %}
+      <tr class="border-t border-base-100 hover:bg-base-50">
+        <td class="px-4 py-2">{{ g.fecha|date:"d/m/Y" }}</td>
+        <td class="px-4 py-2">
+          <a href="{% url 'obras:detail' g.obra_id %}" class="text-primary-600 hover:underline">{{ g.obra.nombre }}</a>
+        </td>
+        <td class="px-4 py-2">{{ g.get_tipo_gasto_display }}</td>
+        <td class="px-4 py-2 text-right font-semibold">${{ g.monto|floatformat:2|intcomma }}</td>
+        <td class="px-4 py-2">
+          {% if g.estado == 'APROBADO' %}
+            <span class="px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800">Aprobado</span>
+          {% elif g.estado == 'BORRADOR' %}
+            <span class="px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">Borrador</span>
+          {% else %}
+            <span class="px-2 py-0.5 rounded text-xs font-medium bg-rose-100 text-rose-800">Anulado</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="px-4 py-6 text-center text-base-400">Sin gastos registrados</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

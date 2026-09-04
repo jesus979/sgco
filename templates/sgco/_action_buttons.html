@@ -1,0 +1,35 @@
+{% load sgco_extras %}
+<div class="flex items-center justify-end gap-2">
+  {% if show_detail %}
+    <a href="{{ obj|detail_url:list_url_name }}"
+       class="inline-flex items-center px-2 py-1 text-primary-600 hover:bg-primary-50 rounded"
+       title="Ver detalle">
+      <i class="ti ti-eye text-base"></i>
+    </a>
+  {% endif %}
+  {% if show_update %}
+    <a href="{{ obj|update_url:list_url_name }}"
+       class="inline-flex items-center px-2 py-1 text-blue-600 hover:bg-blue-50 rounded"
+       title="Editar">
+      <i class="ti ti-edit text-base"></i>
+    </a>
+  {% endif %}
+  {% if show_anular %}
+    <form method="post" action="{{ obj|anular_url:list_url_name }}" class="inline">
+      {% csrf_token %}
+      <button type="submit"
+              class="inline-flex items-center px-2 py-1 text-amber-600 hover:bg-amber-50 rounded"
+              title="Anular"
+              onclick="return confirm('¿Anular este registro? El saldo de la obra se recalculará automáticamente.')">
+        <i class="ti ti-ban text-base"></i>
+      </button>
+    </form>
+  {% endif %}
+  {% if show_delete %}
+    <a href="{{ obj|delete_url:list_url_name }}"
+       class="inline-flex items-center px-2 py-1 text-rose-600 hover:bg-rose-50 rounded"
+       title="Eliminar">
+      <i class="ti ti-trash text-base"></i>
+    </a>
+  {% endif %}
+</div>

@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% load humanize sgco_extras %}
+{% block title %}Movimientos de material · SGCO{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-4">
+  <div>
+    <h1 class="text-2xl font-semibold text-base-900">Movimientos de material</h1>
+    <p class="text-sm text-base-500">
+      {{ paginator.count }} movimiento{{ paginator.count|pluralize:"s" }}
+      {% if obra_filtro %} · filtrando por <strong>{{ obra_filtro.nombre }}</strong>{% endif %}
+    </p>
+  </div>
+  <div class="flex gap-2">
+    <a href="{% url 'inventario:movimiento_list' %}"
+       class="px-3 py-2 border border-base-200 rounded hover:bg-base-50 {% if not obra_filtro %}bg-base-100{% endif %}">
+      Todos
+    </a>
+    {% if obra_filtro %}
+      <a href="{% url 'obras:detail' obra_filtro.pk %}"
+         class="inline-flex items-center gap-1 px-3 py-2 border border-base-200 rounded hover:bg-base-50">
+        <i class="ti ti-arrow-left"></i> Volver a la obra
+      </a>
+    {% endif %}
+    <a href="{% url 'inventario:movimiento_create' %}{% if obra_filtro %}?obra={{ obra_filtro.pk }}{% endif %}"
+       class="inline-flex items-center gap-1 px-3 py-2 bg-primary-600 text-white rounded hover:bg-primary-700">
+      <i class="ti ti-plus"></i> Nuevo movimiento
+    </a>
+  </div>
+</div>
+
+{% if obra_filtro %}
+  <div class="mb-4 bg-blue-50 border border-blue-200 text-blue-800 text-sm rounded-lg px-4 py-3">
+    Mostrando solo movimientos de la obra
+    <strong>{{ obra_filtro.nombre }}</strong>.
+    <a href="{% url 'inventario:movimiento_list' %}" class="underline ml-2">Limpiar filtro</a>
+  </div>
+{% else %}
+  <div class="mb-4 bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-lg px-4 py-3">
+    <strong>Pendiente de validación con cliente:</strong>
+    los movimientos registrados directamente desde este formulario
+    NO actualizan el stock automáticamente. Para afectar el inventario
+    debe usarse un servicio transaccional explícito
+    (<code>apps.inventario.services</code>).
+  </div>
+{% endif %}
+
+<div class="bg-white border border-base-200 rounded-xl overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-base-50 text-base-600">
+      <tr>
+        <th class="text-left px-4 py-2 font-medium">Fecha</th>
+        <th class="text-left px-4 py-2 font-medium">Obra</th>
+        <th class="text-left px-4 py-2 font-medium">Material</th>
+        <th class="text-left px-4 py-2 font-medium">Tipo</th>
+        <th class="text-right px-4 py-2 font-medium">Cantidad</th>
+        <th class="text-left px-4 py-2 font-medium">Usuario</th>
+        <th class="text-left px-4 py-2 font-medium">Referencia</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in object_list %}
+      <tr class="border-t border-base-100 hover:bg-base-50">
+        <td class="px-4 py-2">{{ m.fecha|date:"d/m/Y" }}</td>
+        <td class="px-4 py-2">
+          <a href="{% url 'obras:detail' m.obra_id %}" class="text-primary-600 hover:underline">{{ m.obra.nombre }}</a>
+        </td>
+        <td class="px-4 py-2">{{ m.material.nombre }}</td>
+        <td class="px-4 py-2">
+          {% if m.tipo == 'ENTRADA' %}
+            <span class="px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800">Entrada</span>
+          {% elif m.tipo == 'SALIDA' %}
+            <span class="px-2 py-0.5 rounded text-xs font-medium bg-rose-100 text-rose-800">Salida</span>
+          {% elif m.tipo == 'TRANSFERENCIA' %}
+            <span class="px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">Transferencia</span>
+          {% elif m.tipo == 'DEVOLUCION' %}
+            <span class="px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">Devolución</span>
+          {% else %}
+            <span class="px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700">{{ m.get_tipo_display }}</span>
+          {% endif %}
+        </td>
+        <td class="px-4 py-2 text-right font-semibold">{{ m.cantidad }}</td>
+        <td class="px-4 py-2 text-base-600">{{ m.usuario.username }}</td>
+        <td class="px-4 py-2 text-base-500">{{ m.referencia|default:"—" }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" class="px-4 py-6 text-center text-base-400">Sin movimientos</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% include 'sgco/_pagination.html' %}
+{% endblock %}

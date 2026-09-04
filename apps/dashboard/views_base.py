@@ -1,0 +1,1 @@
+"""Vistas placeholder (dashboard es una vista basada en templates)."""

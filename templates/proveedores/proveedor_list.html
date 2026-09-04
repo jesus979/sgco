@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% load humanize sgco_extras %}
+{% block title %}Proveedores · SGCO{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-4">
+  <div>
+    <h1 class="text-2xl font-semibold text-base-900">Proveedores</h1>
+    <p class="text-sm text-base-500">{{ paginator.count }} proveedor{{ paginator.count|pluralize:"es" }}</p>
+  </div>
+  <div class="flex gap-2">
+    <form method="get" class="flex items-center gap-2">
+      <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Buscar..."
+             class="px-3 py-2 border border-base-200 rounded bg-white" />
+      <button class="px-3 py-2 bg-base-100 border border-base-200 rounded">Buscar</button>
+    </form>
+    <a href="{% url 'proveedores:proveedor_create' %}"
+       class="inline-flex items-center gap-1 px-3 py-2 bg-primary-600 text-white rounded hover:bg-primary-700">
+      <i class="ti ti-plus"></i> Nuevo proveedor
+    </a>
+  </div>
+</div>
+
+<div class="bg-white border border-base-200 rounded-xl overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-base-50 text-base-600">
+      <tr>
+        <th class="text-left px-4 py-2 font-medium">Nombre</th>
+        <th class="text-left px-4 py-2 font-medium">Identificación</th>
+        <th class="text-left px-4 py-2 font-medium">Teléfono</th>
+        <th class="text-left px-4 py-2 font-medium">Email</th>
+        <th class="text-right px-4 py-2 font-medium">Facturas</th>
+        <th class="text-right px-4 py-2 font-medium">Total facturado</th>
+        <th class="text-left px-4 py-2 font-medium">Activo</th>
+        <th class="text-right px-4 py-2 font-medium">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rows %}
+      <tr class="border-t border-base-100 hover:bg-base-50">
+        <td class="px-4 py-2 font-medium text-base-900">{{ r.obj.nombre }}</td>
+        <td class="px-4 py-2 text-base-600">{{ r.obj.identificacion|default:"—" }}</td>
+        <td class="px-4 py-2 text-base-600">{{ r.obj.telefono|default:"—" }}</td>
+        <td class="px-4 py-2 text-base-600">{{ r.obj.email|default:"—" }}</td>
+        <td class="px-4 py-2 text-right">{{ r.facturas_count }}</td>
+        <td class="px-4 py-2 text-right">${{ r.facturas_total|floatformat:0|intcomma }}</td>
+        <td class="px-4 py-2">
+          {% if r.obj.activo %}
+            <span class="px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800">Sí</span>
+          {% else %}
+            <span class="px-2 py-0.5 rounded text-xs font-medium bg-slate-200 text-slate-700">No</span>
+          {% endif %}
+        </td>
+        <td class="px-4 py-2 text-right whitespace-nowrap">
+          {% include 'sgco/_action_buttons.html' with obj=r.obj list_url_name='proveedor_list' show_detail=True show_update=True show_delete=True %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="8" class="px-4 py-6 text-center text-base-400">Sin proveedores</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% include 'sgco/_pagination.html' %}
+{% endblock %}

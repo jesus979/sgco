@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}{{ proveedor.nombre }} · SGCO{% endblock %}
+
+{% block content %}
+<div class="mb-4 flex items-center justify-between">
+  <div>
+    <h1 class="text-2xl font-semibold text-base-900">{{ proveedor.nombre }}</h1>
+    <p class="text-sm text-base-500">
+      {{ proveedor.identificacion|default:"—" }}
+      · {{ proveedor.telefono|default:"—" }}
+      · {{ proveedor.email|default:"—" }}
+    </p>
+  </div>
+  <div class="flex gap-2">
+    <a href="{% url 'proveedores:proveedor_update' proveedor.pk %}" class="px-3 py-2 border border-base-200 rounded hover:bg-base-50">
+      <i class="ti ti-edit"></i> Editar
+    </a>
+    <a href="{% url 'proveedores:proveedor_list' %}" class="px-3 py-2 border border-base-200 rounded hover:bg-base-50">
+      ← Volver
+    </a>
+  </div>
+</div>
+
+<!-- KPIs -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+  <div class="bg-white border border-base-200 rounded-xl p-5">
+    <div class="text-sm text-base-500">Facturas registradas</div>
+    <div class="mt-2 text-2xl font-semibold text-base-900">{{ facturas_count }}</div>
+  </div>
+  <div class="bg-white border border-base-200 rounded-xl p-5">
+    <div class="text-sm text-base-500">Total facturado</div>
+    <div class="mt-2 text-2xl font-semibold text-base-900">${{ facturas_total|floatformat:2|intcomma }}</div>
+  </div>
+  <div class="bg-white border border-base-200 rounded-xl p-5">
+    <div class="text-sm text-base-500">Estado</div>
+    <div class="mt-2">
+      {% if proveedor.activo %}
+        <span class="px-3 py-1 rounded text-sm font-medium bg-emerald-100 text-emerald-800">Activo</span>
+      {% else %}
+        <span class="px-3 py-1 rounded text-sm font-medium bg-slate-200 text-slate-700">Inactivo</span>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Facturas -->
+<div class="bg-white border border-base-200 rounded-xl overflow-hidden">
+  <div class="px-5 py-3 border-b border-base-200 flex items-center justify-between">
+    <h2 class="font-semibold text-base-900">Facturas</h2>
+    <a href="{% url 'proveedores:factura_list' %}" class="text-sm text-primary-600 hover:underline">Ver todas</a>
+  </div>
+  <table class="w-full text-sm">
+    <thead class="bg-base-50 text-base-600">
+      <tr>
+        <th class="text-left px-4 py-2 font-medium">Folio</th>
+        <th class="text-left px-4 py-2 font-medium">Obra</th>
+        <th class="text-left px-4 py-2 font-medium">Emisión</th>
+        <th class="text-right px-4 py-2 font-medium">Total</th>
+        <th class="text-left px-4 py-2 font-medium">Estado</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for f in facturas %}
+      <tr class="border-t border-base-100 hover:bg-base-50">
+        <td class="px-4 py-2 font-medium">{{ f.folio }}</td>
+        <td class="px-4 py-2">
+          <a href="{% url 'obras:detail' f.obra_id %}" class="text-primary-600 hover:underline">{{ f.obra.nombre }}</a>
+        </td>
+        <td class="px-4 py-2">{{ f.fecha_emision|date:"d/m/Y" }}</td>
+        <td class="px-4 py-2 text-right font-semibold">${{ f.total|floatformat:2|intcomma }}</td>
+        <td class="px-4 py-2">
+          {% if f.estado == 'PAGADO' %}
+            <span class="px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800">Pagado</span>
+          {% elif f.estado == 'PARCIAL' %}
+            <span class="px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">Parcial</span>
+          {% else %}
+            <span class="px-2 py-0.5 rounded text-xs font-medium bg-rose-100 text-rose-800">Pendiente</span>
+          {% endif %}
+        </td>
+        <td class="px-4 py-2 text-right">
+          <a href="{% url 'proveedores:factura_detail' f.pk %}" class="text-primary-600 hover:underline">Ver</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="px-4 py-6 text-center text-base-400">Sin facturas</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

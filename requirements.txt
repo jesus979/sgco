@@ -1,0 +1,14 @@
+# SGCO - Dependencias
+# Python 3.12+ recomendado
+
+# Framework
+Django==5.2.12
+
+# UI / Admin moderno
+django-unfold==0.100.0
+
+# Configuración por entorno
+python-decouple==3.8
+
+# Reportes PDF
+reportlab==5.0.1

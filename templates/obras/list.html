@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% load humanize sgco_extras %}
+{% block title %}Obras · SGCO{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-4">
+  <div>
+    <h1 class="text-2xl font-semibold text-base-900">Obras</h1>
+    <p class="text-sm text-base-500">
+      {{ paginator.count }} obra{{ paginator.count|pluralize:"s" }} registrada{{ paginator.count|pluralize:"s" }}
+    </p>
+  </div>
+  <div class="flex gap-2">
+    <form method="get" class="flex items-center gap-2">
+      <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Buscar..."
+             class="px-3 py-2 border border-base-200 rounded bg-white" />
+      <button class="px-3 py-2 bg-base-100 border border-base-200 rounded">Buscar</button>
+    </form>
+    <a href="{% url 'obras:create' %}" class="inline-flex items-center gap-1 px-3 py-2 bg-primary-600 text-white rounded hover:bg-primary-700">
+      <i class="ti ti-plus"></i> Nueva obra
+    </a>
+  </div>
+</div>
+
+<div class="bg-white border border-base-200 rounded-xl overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-base-50 text-base-600">
+      <tr>
+        <th class="text-left px-4 py-2 font-medium">Obra</th>
+        <th class="text-left px-4 py-2 font-medium">Estado</th>
+        <th class="text-left px-4 py-2 font-medium">Ubicación</th>
+        <th class="text-left px-4 py-2 font-medium">Inicio</th>
+        <th class="text-left px-4 py-2 font-medium">Fin est.</th>
+        <th class="text-right px-4 py-2 font-medium">Asignado</th>
+        <th class="text-right px-4 py-2 font-medium">Gastado</th>
+        <th class="text-right px-4 py-2 font-medium">Saldo</th>
+        <th class="text-right px-4 py-2 font-medium">% Ejec.</th>
+        <th class="text-right px-4 py-2 font-medium">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr class="border-t border-base-100 hover:bg-base-50">
+        <td class="px-4 py-2 font-medium text-base-900">{{ row.obra.nombre }}</td>
+        <td class="px-4 py-2">
+          {% if row.obra.estado == 'PLANIFICACION' %}
+            <span class="px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">Planificación</span>
+          {% elif row.obra.estado == 'EN_EJECUCION' %}
+            <span class="px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800">En ejecución</span>
+          {% elif row.obra.estado == 'PAUSADA' %}
+            <span class="px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">Pausada</span>
+          {% else %}
+            <span class="px-2 py-0.5 rounded text-xs font-medium bg-slate-200 text-slate-700">Culminada</span>
+          {% endif %}
+        </td>
+        <td class="px-4 py-2 text-base-600">{{ row.obra.ubicacion }}</td>
+        <td class="px-4 py-2">{{ row.obra.fecha_inicio|date:"d/m/Y" }}</td>
+        <td class="px-4 py-2">{{ row.obra.fecha_fin_estimada|date:"d/m/Y" }}</td>
+        <td class="px-4 py-2 text-right">${{ row.asignado|floatformat:0|intcomma }}</td>
+        <td class="px-4 py-2 text-right">${{ row.gastado|floatformat:0|intcomma }}</td>
+        <td class="px-4 py-2 text-right font-semibold">${{ row.saldo|floatformat:0|intcomma }}</td>
+        <td class="px-4 py-2 text-right">
+          <div class="flex items-center justify-end gap-2">
+            <span>{{ row.porcentaje|floatformat:1 }}%</span>
+            <div class="w-12 bg-base-100 rounded-full h-1.5">
+              <div class="bg-emerald-500 h-1.5 rounded-full" style="width: {{ row.porcentaje }}%"></div>
+            </div>
+          </div>
+        </td>
+        <td class="px-4 py-2 text-right whitespace-nowrap">
+          {% include 'sgco/_action_buttons.html' with obj=row.obra list_url_name='obras_list' show_detail=True show_update=True show_delete=True %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="10" class="px-4 py-6 text-center text-base-400">Sin obras registradas</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% include 'sgco/_pagination.html' %}
+{% endblock %}

@@ -1,0 +1,46 @@
+{% load sgco_extras %}
+<div class="bg-white border border-base-200 rounded-xl overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-base-50 text-base-600">
+      <tr>
+        {% for col in columns %}
+          <th class="text-left px-4 py-2 font-medium">{{ col.label }}</th>
+        {% endfor %}
+        {% if show_actions %}
+          <th class="text-right px-4 py-2 font-medium">Acciones</th>
+        {% endif %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for obj in object_list %}
+        <tr class="border-t border-base-100 hover:bg-base-50">
+          {% for col in columns %}
+            <td class="px-4 py-2">
+              {% if col.link_detail %}
+                <a href="{{ obj|detail_url:list_url_name }}" class="text-primary-600 hover:underline">
+                  {{ obj|get_attr:col.field }}
+                </a>
+              {% else %}
+                {{ obj|get_attr:col.field }}
+              {% endif %}
+            </td>
+          {% endfor %}
+          {% if show_actions %}
+            <td class="px-4 py-2 text-right whitespace-nowrap">
+              {% include 'sgco/_action_buttons.html' with obj=obj list_url_name=list_url_name show_detail=show_detail show_update=show_update show_delete=show_delete show_anular=show_anular %}
+            </td>
+          {% endif %}
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="{{ columns|length|add:1 }}" class="px-4 py-6 text-center text-base-400">
+            {{ empty_message|default:"Sin registros" }}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% if is_paginated %}
+  {% include 'sgco/_pagination.html' %}
+{% endif %}

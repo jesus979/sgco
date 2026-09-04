@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% load humanize sgco_extras %}
+{% block title %}Gastos de obra · SGCO{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-4">
+  <div>
+    <h1 class="text-2xl font-semibold text-base-900">Gastos de obra</h1>
+    <p class="text-sm text-base-500">
+      {{ paginator.count }} gasto{{ paginator.count|pluralize:"s" }}
+      {% if obra_filtro %} · filtrando por <strong>{{ obra_filtro.nombre }}</strong>{% endif %}
+      {% if estado_filtro %} · estado <strong>{{ estado_filtro }}</strong>{% endif %}
+      {% if tipo_filtro %} · tipo <strong>{{ tipo_filtro }}</strong>{% endif %}
+    </p>
+  </div>
+  <div class="flex gap-2">
+    <a href="{% url 'finanzas:gasto_list' %}"
+       class="px-3 py-2 border border-base-200 rounded hover:bg-base-50 {% if not obra_filtro and not estado_filtro and not tipo_filtro %}bg-base-100{% endif %}">
+      Todos
+    </a>
+    {% if obra_filtro %}
+      <a href="{% url 'obras:detail' obra_filtro.pk %}"
+         class="inline-flex items-center gap-1 px-3 py-2 border border-base-200 rounded hover:bg-base-50">
+        <i class="ti ti-arrow-left"></i> Volver a la obra
+      </a>
+    {% endif %}
+    <a href="{% url 'finanzas:gasto_create' %}{% if obra_filtro %}?obra={{ obra_filtro.pk }}{% endif %}"
+       class="inline-flex items-center gap-1 px-3 py-2 bg-primary-600 text-white rounded hover:bg-primary-700">
+      <i class="ti ti-plus"></i> Nuevo gasto
+    </a>
+  </div>
+</div>
+
+{% if obra_filtro or estado_filtro or tipo_filtro %}
+  <div class="mb-4 bg-blue-50 border border-blue-200 text-blue-800 text-sm rounded-lg px-4 py-3 flex flex-wrap gap-3 items-center">
+    <span><strong>Filtros activos:</strong></span>
+    {% if obra_filtro %}<span>Obra: {{ obra_filtro.nombre }}</span>{% endif %}
+    {% if estado_filtro %}<span>Estado: {{ estado_filtro }}</span>{% endif %}
+    {% if tipo_filtro %}<span>Tipo: {{ tipo_filtro }}</span>{% endif %}
+    <a href="{% url 'finanzas:gasto_list' %}" class="underline ml-2">Limpiar</a>
+  </div>
+{% endif %}
+
+<!-- Filtros por estado / tipo -->
+<div class="bg-white border border-base-200 rounded-xl p-3 mb-4 flex flex-wrap items-center gap-3 text-sm">
+  <form method="get" class="flex flex-wrap items-center gap-2">
+    {% if obra_filtro %}<input type="hidden" name="obra" value="{{ obra_filtro.pk }}" />{% endif %}
+    <label class="text-base-500">Estado:</label>
+    <select name="estado" class="border border-base-200 rounded px-2 py-1">
+      <option value="">— todos —</option>
+      {% for value, label in estados %}
+        <option value="{{ value }}" {% if estado_filtro == value %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <label class="text-base-500 ml-2">Tipo:</label>
+    <select name="tipo" class="border border-base-200 rounded px-2 py-1">
+      <option value="">— todos —</option>
+      {% for value, label in tipos %}
+        <option value="{{ value }}" {% if tipo_filtro == value %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <button class="px-3 py-1 border border-base-200 rounded hover:bg-base-50">Aplicar</button>
+  </form>
+</div>
+
+<div class="bg-white border border-base-200 rounded-xl overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-base-50 text-base-600">
+      <tr>
+        <th class="text-left px-4 py-2 font-medium">Fecha</th>
+        <th class="text-left px-4 py-2 font-medium">Obra</th>
+        <th class="text-left px-4 py-2 font-medium">Tipo</th>
+        <th class="text-left px-4 py-2 font-medium">Descripción</th>
+        <th class="text-right px-4 py-2 font-medium">Monto</th>
+        <th class="text-left px-4 py-2 font-medium">Estado</th>
+        <th class="text-right px-4 py-2 font-medium">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for g in object_list %}
+      <tr class="border-t border-base-100 hover:bg-base-50 {% if g.estado == 'ANULADO' %}opacity-60{% endif %}">
+        <td class="px-4 py-2">{{ g.fecha|date:"d/m/Y" }}</td>
+        <td class="px-4 py-2">
+          <a href="{% url 'obras:detail' g.obra_id %}" class="text-primary-600 hover:underline">{{ g.obra.nombre }}</a>
+        </td>
+        <td class="px-4 py-2">{{ g.get_tipo_gasto_display }}</td>
+        <td class="px-4 py-2 text-base-600">{{ g.descripcion|default:"—"|truncatechars:50 }}</td>
+        <td class="px-4 py-2 text-right font-semibold">${{ g.monto|floatformat:2|intcomma }}</td>
+        <td class="px-4 py-2">
+          {% if g.estado == 'APROBADO' %}
+            <span class="px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800">Aprobado</span>
+          {% elif g.estado == 'BORRADOR' %}
+            <span class="px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">Borrador</span>
+          {% else %}
+            <span class="px-2 py-0.5 rounded text-xs font-medium bg-rose-100 text-rose-800">Anulado</span>
+          {% endif %}
+        </td>
+        <td class="px-4 py-2 text-right whitespace-nowrap">
+          {% include 'sgco/_action_buttons.html' with obj=g list_url_name='gasto_list' show_detail=True show_update=True show_delete=True show_anular=True %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" class="px-4 py-6 text-center text-base-400">Sin gastos registrados</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% include 'sgco/_pagination.html' %}
+{% endblock %}

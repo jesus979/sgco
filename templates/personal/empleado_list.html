@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% load humanize sgco_extras %}
+{% block title %}Empleados · SGCO{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-4">
+  <div>
+    <h1 class="text-2xl font-semibold text-base-900">Empleados</h1>
+    <p class="text-sm text-base-500">{{ paginator.count }} empleado{{ paginator.count|pluralize:"s" }}</p>
+  </div>
+  <div class="flex gap-2">
+    <form method="get" class="flex items-center gap-2">
+      <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Buscar..."
+             class="px-3 py-2 border border-base-200 rounded bg-white" />
+      <button class="px-3 py-2 bg-base-100 border border-base-200 rounded">Buscar</button>
+    </form>
+    <a href="{% url 'personal:empleado_create' %}"
+       class="inline-flex items-center gap-1 px-3 py-2 bg-primary-600 text-white rounded hover:bg-primary-700">
+      <i class="ti ti-plus"></i> Nuevo empleado
+    </a>
+  </div>
+</div>
+
+<div class="bg-white border border-base-200 rounded-xl overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-base-50 text-base-600">
+      <tr>
+        <th class="text-left px-4 py-2 font-medium">Cédula</th>
+        <th class="text-left px-4 py-2 font-medium">Nombres</th>
+        <th class="text-left px-4 py-2 font-medium">Apellidos</th>
+        <th class="text-left px-4 py-2 font-medium">Cargo</th>
+        <th class="text-right px-4 py-2 font-medium">Salario diario</th>
+        <th class="text-left px-4 py-2 font-medium">Activo</th>
+        <th class="text-right px-4 py-2 font-medium">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for e in object_list %}
+      <tr class="border-t border-base-100 hover:bg-base-50">
+        <td class="px-4 py-2 font-medium">{{ e.cedula }}</td>
+        <td class="px-4 py-2">{{ e.nombres }}</td>
+        <td class="px-4 py-2">{{ e.apellidos }}</td>
+        <td class="px-4 py-2 text-base-600">{{ e.cargo }}</td>
+        <td class="px-4 py-2 text-right">${{ e.salario_diario|floatformat:2|intcomma }}</td>
+        <td class="px-4 py-2">
+          {% if e.activo %}
+            <span class="px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800">Sí</span>
+          {% else %}
+            <span class="px-2 py-0.5 rounded text-xs font-medium bg-slate-200 text-slate-700">No</span>
+          {% endif %}
+        </td>
+        <td class="px-4 py-2 text-right whitespace-nowrap">
+          {% include 'sgco/_action_buttons.html' with obj=e list_url_name='empleado_list' show_detail=True show_update=True show_delete=True %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" class="px-4 py-6 text-center text-base-400">Sin empleados</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% include 'sgco/_pagination.html' %}
+{% endblock %}

@@ -1,0 +1,252 @@
+{% load sgco_extras sgco_active %}
+{% url 'dashboard:index' as dashboard_url %}
+{% url 'obras:list' as obras_list_url %}
+{% url 'obras:create' as obras_create_url %}
+{% url 'fondos:list' as fondos_list_url %}
+{% url 'finanzas:gasto_list' as gasto_list_url %}
+{% url 'finanzas:gasto_create' as gasto_create_url %}
+{% url 'finanzas:otro_list' as otro_list_url %}
+{% url 'finanzas:otro_create' as otro_create_url %}
+{% url 'proveedores:proveedor_list' as proveedor_list_url %}
+{% url 'proveedores:factura_list' as factura_list_url %}
+{% url 'proveedores:detalle_list' as detalle_list_url %}
+{% url 'inventario:material_list' as material_list_url %}
+{% url 'inventario:inventario_list' as inventario_list_url %}
+{% url 'inventario:movimiento_list' as movimiento_list_url %}
+{% url 'personal:empleado_list' as empleado_list_url %}
+{% url 'personal:nomina_list' as nomina_list_url %}
+{% url 'personal:nomina_detalle_list' as nomina_detalle_list_url %}
+{% url 'maquinaria:maquinaria_list' as maquinaria_list_url %}
+{% url 'maquinaria:uso_list' as uso_list_url %}
+
+{# Flags globales del sidebar #}
+{% is_active 'dashboard' as dash_active %}
+{% is_active_group 'obras' as obras_active %}
+{% is_active_group 'fondos,finanzas,proveedores' as op_active %}
+{% is_active_group 'inventario' as inv_active %}
+{% is_active_group 'personal' as per_active %}
+{% is_active_group 'maquinaria' as maq_active %}
+
+{# Flags de cada item #}
+{% is_active 'obras' 'list' as obras_list_active %}
+{% is_active 'obras' 'create' as obras_create_active %}
+{% is_active 'fondos' as fondos_active %}
+{% is_active 'finanzas' 'gasto_list' as gasto_list_active %}
+{% is_active 'finanzas' 'otro_list' as otro_list_active %}
+{% is_active 'proveedores' 'factura_list' as factura_list_active %}
+{% is_active 'proveedores' 'detalle_list' as detalle_list_active %}
+{% is_active 'inventario' 'material_list' as material_list_active %}
+{% is_active 'inventario' 'inventario_list' as inventario_list_active %}
+{% is_active 'inventario' 'movimiento_list' as movimiento_list_active %}
+{% is_active 'personal' 'empleado_list' as empleado_list_active %}
+{% is_active 'personal' 'nomina_list' as nomina_list_active %}
+{% is_active 'personal' 'nomina_detalle_list' as nomina_detalle_list_active %}
+{% is_active 'maquinaria' 'maquinaria_list' as maquinaria_list_active %}
+{% is_active 'maquinaria' 'uso_list' as uso_list_active %}
+
+<aside id="sidebar"
+       class="fixed inset-y-0 left-0 z-30 w-64 bg-base-900 text-white
+              transform transition-transform duration-200 ease-in-out
+              -translate-x-full md:translate-x-0
+              flex flex-col"
+       aria-label="Navegación principal">
+
+  {# Brand #}
+  <div class="flex items-center justify-between px-4 h-16 border-b border-base-700 shrink-0">
+    <a href="{% url 'dashboard:index' %}" class="flex items-center gap-2 text-lg font-semibold">
+      <i class="ti ti-building-factory-2 text-primary-400 text-2xl"></i>
+      <span>SGCO</span>
+    </a>
+    <button id="sidebarClose" class="md:hidden text-base-300 hover:text-white" aria-label="Cerrar menú">
+      <i class="ti ti-x text-xl"></i>
+    </button>
+  </div>
+
+  <nav class="flex-1 overflow-y-auto py-3">
+    <ul class="px-2 space-y-1 text-sm">
+      {# Dashboard fijo arriba #}
+      <li>
+        <a href="{{ dashboard_url }}"
+           class="flex items-center gap-3 px-3 py-2 rounded {% if dash_active %}bg-primary-600 text-white{% else %}text-base-200 hover:bg-base-700 hover:text-white{% endif %}"
+           {% if dash_active %}aria-current="page"{% endif %}>
+          <i class="ti ti-layout-dashboard text-lg"></i>
+          <span>Dashboard</span>
+        </a>
+      </li>
+
+      {# ---------- GRUPO: OBRAS ---------- #}
+      <li class="pt-2">
+        <button type="button"
+                data-collapse="grp-obras"
+                class="w-full flex items-center justify-between px-3 py-2 rounded {% if obras_active %}text-white bg-base-800{% else %}text-base-300 hover:text-white hover:bg-base-800{% endif %}"
+                aria-expanded="{% if obras_active %}true{% else %}false{% endif %}">
+          <span class="flex items-center gap-3">
+            <i class="ti ti-building text-lg"></i>
+            <span>Obras</span>
+          </span>
+          <i class="ti ti-chevron-down text-base transition-transform duration-200 {% if obras_active %}rotate-180{% endif %}"></i>
+        </button>
+        <ul id="grp-obras" class="mt-1 ml-4 pl-3 border-l border-base-700 space-y-1 {% if not obras_active %}hidden{% endif %}">
+          <li>
+            <a href="{{ obras_list_url }}"
+               class="block px-3 py-1.5 rounded {% if obras_list_active %}bg-primary-600 text-white{% else %}text-base-300 hover:text-white hover:bg-base-700{% endif %}">
+              Listado
+            </a>
+          </li>
+          <li>
+            <a href="{{ obras_create_url }}"
+               class="block px-3 py-1.5 rounded {% if obras_create_active %}bg-primary-600 text-white{% else %}text-base-300 hover:text-white hover:bg-base-700{% endif %}">
+              Nueva obra
+            </a>
+          </li>
+        </ul>
+      </li>
+
+      {# ---------- GRUPO: OPERACIÓN ---------- #}
+      <li class="pt-2">
+        <button type="button"
+                data-collapse="grp-operacion"
+                class="w-full flex items-center justify-between px-3 py-2 rounded {% if op_active %}text-white bg-base-800{% else %}text-base-300 hover:text-white hover:bg-base-800{% endif %}"
+                aria-expanded="{% if op_active %}true{% else %}false{% endif %}">
+          <span class="flex items-center gap-3">
+            <i class="ti ti-cash text-lg"></i>
+            <span>Operación</span>
+          </span>
+          <i class="ti ti-chevron-down text-base transition-transform duration-200 {% if op_active %}rotate-180{% endif %}"></i>
+        </button>
+        <ul id="grp-operacion" class="mt-1 ml-4 pl-3 border-l border-base-700 space-y-1 {% if not op_active %}hidden{% endif %}">
+          <li>
+            <a href="{{ fondos_list_url }}"
+               class="block px-3 py-1.5 rounded {% if fondos_active %}bg-primary-600 text-white{% else %}text-base-300 hover:text-white hover:bg-base-700{% endif %}">
+              Asignaciones de fondo
+            </a>
+          </li>
+          <li>
+            <a href="{{ gasto_list_url }}"
+               class="block px-3 py-1.5 rounded {% if gasto_list_active %}bg-primary-600 text-white{% else %}text-base-300 hover:text-white hover:bg-base-700{% endif %}">
+              Gastos
+            </a>
+          </li>
+          <li>
+            <a href="{{ otro_list_url }}"
+               class="block px-3 py-1.5 rounded {% if otro_list_active %}bg-primary-600 text-white{% else %}text-base-300 hover:text-white hover:bg-base-700{% endif %}">
+              Otros gastos
+            </a>
+          </li>
+          <li>
+            <a href="{{ factura_list_url }}"
+               class="block px-3 py-1.5 rounded {% if factura_list_active %}bg-primary-600 text-white{% else %}text-base-300 hover:text-white hover:bg-base-700{% endif %}">
+              Facturas
+            </a>
+          </li>
+          <li>
+            <a href="{{ detalle_list_url }}"
+               class="block px-3 py-1.5 rounded {% if detalle_list_active %}bg-primary-600 text-white{% else %}text-base-300 hover:text-white hover:bg-base-700{% endif %}">
+              Detalles de factura
+            </a>
+          </li>
+        </ul>
+      </li>
+
+      {# ---------- GRUPO: INVENTARIO ---------- #}
+      <li class="pt-2">
+        <button type="button"
+                data-collapse="grp-inventario"
+                class="w-full flex items-center justify-between px-3 py-2 rounded {% if inv_active %}text-white bg-base-800{% else %}text-base-300 hover:text-white hover:bg-base-800{% endif %}"
+                aria-expanded="{% if inv_active %}true{% else %}false{% endif %}">
+          <span class="flex items-center gap-3">
+            <i class="ti ti-box text-lg"></i>
+            <span>Inventario</span>
+          </span>
+          <i class="ti ti-chevron-down text-base transition-transform duration-200 {% if inv_active %}rotate-180{% endif %}"></i>
+        </button>
+        <ul id="grp-inventario" class="mt-1 ml-4 pl-3 border-l border-base-700 space-y-1 {% if not inv_active %}hidden{% endif %}">
+          <li>
+            <a href="{{ material_list_url }}"
+               class="block px-3 py-1.5 rounded {% if material_list_active %}bg-primary-600 text-white{% else %}text-base-300 hover:text-white hover:bg-base-700{% endif %}">
+              Materiales
+            </a>
+          </li>
+          <li>
+            <a href="{{ inventario_list_url }}"
+               class="block px-3 py-1.5 rounded {% if inventario_list_active %}bg-primary-600 text-white{% else %}text-base-300 hover:text-white hover:bg-base-700{% endif %}">
+              Stock por obra
+            </a>
+          </li>
+          <li>
+            <a href="{{ movimiento_list_url }}"
+               class="block px-3 py-1.5 rounded {% if movimiento_list_active %}bg-primary-600 text-white{% else %}text-base-300 hover:text-white hover:bg-base-700{% endif %}">
+              Movimientos
+            </a>
+          </li>
+        </ul>
+      </li>
+
+      {# ---------- GRUPO: PERSONAL ---------- #}
+      <li class="pt-2">
+        <button type="button"
+                data-collapse="grp-personal"
+                class="w-full flex items-center justify-between px-3 py-2 rounded {% if per_active %}text-white bg-base-800{% else %}text-base-300 hover:text-white hover:bg-base-800{% endif %}"
+                aria-expanded="{% if per_active %}true{% else %}false{% endif %}">
+          <span class="flex items-center gap-3">
+            <i class="ti ti-users text-lg"></i>
+            <span>Personal</span>
+          </span>
+          <i class="ti ti-chevron-down text-base transition-transform duration-200 {% if per_active %}rotate-180{% endif %}"></i>
+        </button>
+        <ul id="grp-personal" class="mt-1 ml-4 pl-3 border-l border-base-700 space-y-1 {% if not per_active %}hidden{% endif %}">
+          <li>
+            <a href="{{ empleado_list_url }}"
+               class="block px-3 py-1.5 rounded {% if empleado_list_active %}bg-primary-600 text-white{% else %}text-base-300 hover:text-white hover:bg-base-700{% endif %}">
+              Empleados
+            </a>
+          </li>
+          <li>
+            <a href="{{ nomina_list_url }}"
+               class="block px-3 py-1.5 rounded {% if nomina_list_active %}bg-primary-600 text-white{% else %}text-base-300 hover:text-white hover:bg-base-700{% endif %}">
+              Nóminas
+            </a>
+          </li>
+          <li>
+            <a href="{{ nomina_detalle_list_url }}"
+               class="block px-3 py-1.5 rounded {% if nomina_detalle_list_active %}bg-primary-600 text-white{% else %}text-base-300 hover:text-white hover:bg-base-700{% endif %}">
+              Detalles de nómina
+            </a>
+          </li>
+        </ul>
+      </li>
+
+      {# ---------- GRUPO: MAQUINARIA ---------- #}
+      <li class="pt-2">
+        <button type="button"
+                data-collapse="grp-maquinaria"
+                class="w-full flex items-center justify-between px-3 py-2 rounded {% if maq_active %}text-white bg-base-800{% else %}text-base-300 hover:text-white hover:bg-base-800{% endif %}"
+                aria-expanded="{% if maq_active %}true{% else %}false{% endif %}">
+          <span class="flex items-center gap-3">
+            <i class="ti ti-bulldozer text-lg"></i>
+            <span>Maquinaria</span>
+          </span>
+          <i class="ti ti-chevron-down text-base transition-transform duration-200 {% if maq_active %}rotate-180{% endif %}"></i>
+        </button>
+        <ul id="grp-maquinaria" class="mt-1 ml-4 pl-3 border-l border-base-700 space-y-1 {% if not maq_active %}hidden{% endif %}">
+          <li>
+            <a href="{{ maquinaria_list_url }}"
+               class="block px-3 py-1.5 rounded {% if maquinaria_list_active %}bg-primary-600 text-white{% else %}text-base-300 hover:text-white hover:bg-base-700{% endif %}">
+              Catálogo
+            </a>
+          </li>
+          <li>
+            <a href="{{ uso_list_url }}"
+               class="block px-3 py-1.5 rounded {% if uso_list_active %}bg-primary-600 text-white{% else %}text-base-300 hover:text-white hover:bg-base-700{% endif %}">
+              Usos
+            </a>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </nav>
+
+  <div class="px-4 py-3 border-t border-base-700 text-xs text-base-400 shrink-0">
+    v1.0 · MVP
+  </div>
+</aside>

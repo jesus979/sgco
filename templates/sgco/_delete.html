@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Eliminar - SGCO{% endblock %}
+
+{% block content %}
+<div class="bg-white border border-base-200 rounded-lg p-6 max-w-lg">
+  <h2 class="text-lg font-semibold mb-2">Eliminar {{ model_name }}</h2>
+  <p class="text-sm text-base-600 mb-4">¿Seguro que deseas eliminar "{{ object }}"? Esta acción no se puede deshacer.</p>
+  <form method="post">
+    {% csrf_token %}
+    <div class="flex gap-2">
+      <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Sí, eliminar</button>
+      <a href="javascript:history.back()" class="px-4 py-2 border border-base-200 rounded">Cancelar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

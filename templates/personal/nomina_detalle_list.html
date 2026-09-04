@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% load humanize sgco_extras %}
+{% block title %}Detalles de nómina · SGCO{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-4">
+  <div>
+    <h1 class="text-2xl font-semibold text-base-900">Detalles de nómina</h1>
+    <p class="text-sm text-base-500">
+      {{ paginator.count }} línea{{ paginator.count|pluralize:"s" }}
+      {% if nomina_filtro %} · filtrando por nómina <strong>#{{ nomina_filtro.pk }}</strong>{% endif %}
+    </p>
+  </div>
+  <div class="flex gap-2">
+    <a href="{% url 'personal:nomina_detalle_list' %}"
+       class="px-3 py-2 border border-base-200 rounded hover:bg-base-50 {% if not nomina_filtro %}bg-base-100{% endif %}">
+      Todos
+    </a>
+    {% if nomina_filtro %}
+      <a href="{% url 'personal:nomina_detail' nomina_filtro.pk %}"
+         class="inline-flex items-center gap-1 px-3 py-2 border border-base-200 rounded hover:bg-base-50">
+        <i class="ti ti-arrow-left"></i> Volver a la nómina
+      </a>
+    {% endif %}
+    <a href="{% url 'personal:nomina_detalle_create' %}{% if nomina_filtro %}?nomina={{ nomina_filtro.pk }}{% endif %}"
+       class="inline-flex items-center gap-1 px-3 py-2 bg-primary-600 text-white rounded hover:bg-primary-700">
+      <i class="ti ti-plus"></i> Nueva línea
+    </a>
+  </div>
+</div>
+
+<div class="bg-white border border-base-200 rounded-xl overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-base-50 text-base-600">
+      <tr>
+        <th class="text-left px-4 py-2 font-medium">Nómina</th>
+        <th class="text-left px-4 py-2 font-medium">Obra</th>
+        <th class="text-left px-4 py-2 font-medium">Empleado</th>
+        <th class="text-right px-4 py-2 font-medium">Monto</th>
+        <th class="text-right px-4 py-2 font-medium">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in object_list %}
+      <tr class="border-t border-base-100 hover:bg-base-50">
+        <td class="px-4 py-2">
+          <a href="{% url 'personal:nomina_detail' d.nomina_id %}" class="text-primary-600 hover:underline">
+            #{{ d.nomina_id }}
+          </a>
+        </td>
+        <td class="px-4 py-2">{{ d.nomina.obra.nombre }}</td>
+        <td class="px-4 py-2">
+          <a href="{% url 'personal:empleado_detail' d.empleado_id %}" class="text-primary-600 hover:underline">
+            {{ d.empleado.nombre_completo }}
+          </a>
+        </td>
+        <td class="px-4 py-2 text-right font-semibold">${{ d.monto|floatformat:2|intcomma }}</td>
+        <td class="px-4 py-2 text-right whitespace-nowrap">
+          {% include 'sgco/_action_buttons.html' with obj=d list_url_name='nomina_detalle_list' show_detail=False show_update=True show_delete=True %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="px-4 py-6 text-center text-base-400">Sin líneas</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% include 'sgco/_pagination.html' %}
+{% endblock %}

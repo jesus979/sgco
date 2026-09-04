@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}Nómina #{{ nomina.pk }} · SGCO{% endblock %}
+
+{% block content %}
+<div class="mb-4 flex items-center justify-between">
+  <div>
+    <h1 class="text-2xl font-semibold text-base-900">Nómina #{{ nomina.pk }}</h1>
+    <p class="text-sm text-base-500">
+      <a href="{% url 'obras:detail' nomina.obra_id %}" class="hover:underline">{{ nomina.obra.nombre }}</a>
+      · Periodo {{ nomina.periodo_desde|date:"d/m/Y" }} → {{ nomina.periodo_hasta|date:"d/m/Y" }}
+      · Fecha {{ nomina.fecha|date:"d/m/Y" }}
+    </p>
+  </div>
+  <div class="flex gap-2">
+    <a href="{% url 'personal:nomina_update' nomina.pk %}" class="px-3 py-2 border border-base-200 rounded hover:bg-base-50">
+      <i class="ti ti-edit"></i> Editar
+    </a>
+    <a href="{% url 'personal:nomina_list' %}?obra={{ nomina.obra_id }}" class="px-3 py-2 border border-base-200 rounded hover:bg-base-50">
+      ← Volver
+    </a>
+  </div>
+</div>
+
+<!-- KPIs -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+  <div class="bg-white border border-base-200 rounded-xl p-5">
+    <div class="text-sm text-base-500">Total declarado (GastoObra.monto)</div>
+    <div class="mt-2 text-2xl font-semibold text-base-900">${{ nomina.gasto.monto|floatformat:2|intcomma }}</div>
+  </div>
+  <div class="bg-white border border-base-200 rounded-xl p-5">
+    <div class="text-sm text-base-500">Suma de detalles</div>
+    <div class="mt-2 text-2xl font-semibold text-base-900">${{ total_calculado|floatformat:2|intcomma }}</div>
+    {% if nomina.gasto.monto == total_calculado %}
+      <div class="text-xs text-emerald-600 mt-1"><i class="ti ti-check"></i> Consistente</div>
+    {% else %}
+      <div class="text-xs text-amber-600 mt-1"><i class="ti ti-alert-triangle"></i> Recalcular para sincronizar</div>
+    {% endif %}
+  </div>
+  <div class="bg-white border border-base-200 rounded-xl p-5">
+    <div class="text-sm text-base-500">Estado del gasto</div>
+    <div class="mt-2">
+      {% if nomina.gasto.estado == 'APROBADO' %}
+        <span class="px-3 py-1 rounded text-sm font-medium bg-emerald-100 text-emerald-800">Aprobado</span>
+      {% elif nomina.gasto.estado == 'BORRADOR' %}
+        <span class="px-3 py-1 rounded text-sm font-medium bg-amber-100 text-amber-800">Borrador</span>
+      {% else %}
+        <span class="px-3 py-1 rounded text-sm font-medium bg-rose-100 text-rose-800">Anulado</span>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Acciones rápidas -->
+<div class="flex gap-2 mb-4">
+  <a href="{% url 'personal:nomina_detalle_create' %}?nomina={{ nomina.pk }}"
+     class="inline-flex items-center gap-1 px-3 py-2 bg-primary-600 text-white rounded hover:bg-primary-700">
+    <i class="ti ti-plus"></i> Agregar empleado
+  </a>
+  <form method="post" action="{% url 'personal:nomina_recalcular' nomina.pk %}">
+    {% csrf_token %}
+    <button class="inline-flex items-center gap-1 px-3 py-2 border border-blue-200 text-blue-700 rounded hover:bg-blue-50">
+      <i class="ti ti-refresh"></i> Recalcular total desde detalles
+    </button>
+  </form>
+  {% if nomina.gasto.estado != 'ANULADO' %}
+  <form method="post" action="{% url 'personal:nomina_anular' nomina.pk %}">
+    {% csrf_token %}
+    <button class="inline-flex items-center gap-1 px-3 py-2 border border-rose-200 text-rose-700 rounded hover:bg-rose-50"
+            onclick="return confirm('¿Anular esta nómina? Dejará de afectar el saldo.')">
+      <i class="ti ti-ban"></i> Anular nómina
+    </button>
+  </form>
+  {% endif %}
+</div>
+
+<!-- Detalles por empleado -->
+<div class="bg-white border border-base-200 rounded-xl overflow-hidden">
+  <div class="px-5 py-3 border-b border-base-200">
+    <h2 class="font-semibold text-base-900">Detalle por empleado</h2>
+  </div>
+  <table class="w-full text-sm">
+    <thead class="bg-base-50 text-base-600">
+      <tr>
+        <th class="text-left px-4 py-2 font-medium">Cédula</th>
+        <th class="text-left px-4 py-2 font-medium">Empleado</th>
+        <th class="text-right px-4 py-2 font-medium">Monto</th>
+        <th class="text-right px-4 py-2 font-medium">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in detalles %}
+      <tr class="border-t border-base-100 hover:bg-base-50">
+        <td class="px-4 py-2">{{ d.empleado.cedula }}</td>
+        <td class="px-4 py-2">
+          <a href="{% url 'personal:empleado_detail' d.empleado_id %}" class="text-primary-600 hover:underline">
+            {{ d.empleado.nombre_completo }}
+          </a>
+        </td>
+        <td class="px-4 py-2 text-right font-semibold">${{ d.monto|floatformat:2|intcomma }}</td>
+        <td class="px-4 py-2 text-right whitespace-nowrap">
+          <a href="{% url 'personal:nomina_detalle_update' d.pk %}" class="text-blue-600 hover:underline">Editar</a>
+          <a href="{% url 'personal:nomina_detalle_delete' d.pk %}" class="text-rose-600 hover:underline ml-2">Eliminar</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4" class="px-4 py-6 text-center text-base-400">Sin empleados en esta nómina</td></tr>
+      {% endfor %}
+      {% if detalles %}
+      <tr class="border-t-2 border-base-200 bg-base-50">
+        <td colspan="2" class="px-4 py-2 text-right font-semibold">Total calculado:</td>
+        <td class="px-4 py-2 text-right font-semibold">${{ total_calculado|floatformat:2|intcomma }}</td>
+        <td></td>
+      </tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

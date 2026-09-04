@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}Factura {{ factura.folio }} · SGCO{% endblock %}
+
+{% block content %}
+<div class="mb-4 flex items-center justify-between">
+  <div>
+    <h1 class="text-2xl font-semibold text-base-900">Factura {{ factura.folio }}</h1>
+    <p class="text-sm text-base-500">
+      <a href="{% url 'proveedores:proveedor_detail' factura.proveedor_id %}" class="hover:underline">{{ factura.proveedor.nombre }}</a>
+      · <a href="{% url 'obras:detail' factura.obra_id %}" class="hover:underline">{{ factura.obra.nombre }}</a>
+      · {{ factura.fecha_emision|date:"d/m/Y" }}
+    </p>
+  </div>
+  <div class="flex gap-2">
+    <a href="{% url 'proveedores:factura_update' factura.pk %}" class="px-3 py-2 border border-base-200 rounded hover:bg-base-50">
+      <i class="ti ti-edit"></i> Editar
+    </a>
+    <a href="{% url 'proveedores:factura_list' %}?obra={{ factura.obra_id }}" class="px-3 py-2 border border-base-200 rounded hover:bg-base-50">
+      ← Volver
+    </a>
+  </div>
+</div>
+
+<!-- KPIs -->
+<div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
+  <div class="bg-white border border-base-200 rounded-xl p-5">
+    <div class="text-sm text-base-500">Subtotal</div>
+    <div class="mt-2 text-2xl font-semibold text-base-900">${{ subtotal_calculado|floatformat:2|intcomma }}</div>
+    <div class="text-xs text-base-500 mt-1">Suma de líneas</div>
+  </div>
+  <div class="bg-white border border-base-200 rounded-xl p-5">
+    <div class="text-sm text-base-500">Impuesto</div>
+    <div class="mt-2 text-2xl font-semibold text-base-900">${{ factura.impuesto|floatformat:2|intcomma }}</div>
+  </div>
+  <div class="bg-white border border-base-200 rounded-xl p-5">
+    <div class="text-sm text-base-500">Total</div>
+    <div class="mt-2 text-2xl font-semibold text-base-900">${{ factura.total|floatformat:2|intcomma }}</div>
+    {% if es_consistente %}
+      <div class="text-xs text-emerald-600 mt-1"><i class="ti ti-check"></i> Consistente</div>
+    {% else %}
+      <div class="text-xs text-rose-600 mt-1"><i class="ti ti-alert-triangle"></i> Esperado: ${{ total_calculado|floatformat:2|intcomma }}</div>
+    {% endif %}
+  </div>
+  <div class="bg-white border border-base-200 rounded-xl p-5">
+    <div class="text-sm text-base-500">Estado de pago</div>
+    <div class="mt-2">
+      {% if factura.estado == 'PAGADO' %}
+        <span class="px-3 py-1 rounded text-sm font-medium bg-emerald-100 text-emerald-800">Pagado</span>
+      {% elif factura.estado == 'PARCIAL' %}
+        <span class="px-3 py-1 rounded text-sm font-medium bg-amber-100 text-amber-800">Parcial</span>
+      {% else %}
+        <span class="px-3 py-1 rounded text-sm font-medium bg-rose-100 text-rose-800">Pendiente</span>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Líneas de detalle -->
+<div class="bg-white border border-base-200 rounded-xl overflow-hidden mb-6">
+  <div class="px-5 py-3 border-b border-base-200 flex items-center justify-between">
+    <h2 class="font-semibold text-base-900">Líneas de detalle</h2>
+    <a href="{% url 'proveedores:detalle_create' %}?factura={{ factura.pk }}"
+       class="inline-flex items-center gap-1 text-sm text-primary-600 hover:underline">
+      <i class="ti ti-plus"></i> Agregar línea
+    </a>
+  </div>
+  <table class="w-full text-sm">
+    <thead class="bg-base-50 text-base-600">
+      <tr>
+        <th class="text-left px-4 py-2 font-medium">Material</th>
+        <th class="text-right px-4 py-2 font-medium">Cantidad</th>
+        <th class="text-right px-4 py-2 font-medium">Precio unitario</th>
+        <th class="text-right px-4 py-2 font-medium">Subtotal</th>
+        <th class="text-right px-4 py-2 font-medium">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in detalles %}
+      <tr class="border-t border-base-100">
+        <td class="px-4 py-2">
+          <a href="{% url 'inventario:material_detail' d.material_id %}" class="text-primary-600 hover:underline">
+            {{ d.material.nombre }}
+          </a>
+        </td>
+        <td class="px-4 py-2 text-right">{{ d.cantidad }}</td>
+        <td class="px-4 py-2 text-right">${{ d.precio_unitario|floatformat:2|intcomma }}</td>
+        <td class="px-4 py-2 text-right font-semibold">${{ d.subtotal|floatformat:2|intcomma }}</td>
+        <td class="px-4 py-2 text-right whitespace-nowrap">
+          <a href="{% url 'proveedores:detalle_update' d.pk %}" class="text-blue-600 hover:underline">Editar</a>
+          <a href="{% url 'proveedores:detalle_delete' d.pk %}" class="text-rose-600 hover:underline ml-2">Eliminar</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="px-4 py-6 text-center text-base-400">Sin líneas registradas</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if factura.gasto %}
+<div class="bg-white border border-base-200 rounded-xl overflow-hidden">
+  <div class="px-5 py-3 border-b border-base-200">
+    <h2 class="font-semibold text-base-900">Trazabilidad</h2>
+  </div>
+  <div class="p-5 text-sm">
+    <p>
+      Esta factura genera el
+      <a href="{% url 'finanzas:gasto_detail' factura.gasto_id %}" class="text-primary-600 hover:underline">
+        Gasto #{{ factura.gasto_id }}
+      </a>
+      del {{ factura.gasto.fecha|date:"d/m/Y" }} por ${{ factura.gasto.monto|floatformat:2|intcomma }}
+      ({{ factura.gasto.get_tipo_gasto_display }}, estado {{ factura.gasto.get_estado_display }}).
+    </p>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

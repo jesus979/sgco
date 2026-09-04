@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% load humanize sgco_extras %}
+{% block title %}Usos de maquinaria · SGCO{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-4">
+  <div>
+    <h1 class="text-2xl font-semibold text-base-900">Usos de maquinaria</h1>
+    <p class="text-sm text-base-500">
+      {{ paginator.count }} uso{{ paginator.count|pluralize:"s" }}
+      {% if obra_filtro %} · filtrando por <strong>{{ obra_filtro.nombre }}</strong>{% endif %}
+    </p>
+  </div>
+  <div class="flex gap-2">
+    <a href="{% url 'maquinaria:uso_list' %}"
+       class="px-3 py-2 border border-base-200 rounded hover:bg-base-50 {% if not obra_filtro %}bg-base-100{% endif %}">
+      Todos
+    </a>
+    {% if obra_filtro %}
+      <a href="{% url 'obras:detail' obra_filtro.pk %}"
+         class="inline-flex items-center gap-1 px-3 py-2 border border-base-200 rounded hover:bg-base-50">
+        <i class="ti ti-arrow-left"></i> Volver a la obra
+      </a>
+    {% endif %}
+    <a href="{% url 'maquinaria:uso_create' %}{% if obra_filtro %}?obra={{ obra_filtro.pk }}{% endif %}"
+       class="inline-flex items-center gap-1 px-3 py-2 bg-primary-600 text-white rounded hover:bg-primary-700">
+      <i class="ti ti-plus"></i> Nuevo uso
+    </a>
+  </div>
+</div>
+
+{% if obra_filtro %}
+  <div class="mb-4 bg-blue-50 border border-blue-200 text-blue-800 text-sm rounded-lg px-4 py-3">
+    Mostrando solo usos de la obra
+    <strong>{{ obra_filtro.nombre }}</strong>.
+    <a href="{% url 'maquinaria:uso_list' %}" class="underline ml-2">Limpiar filtro</a>
+  </div>
+{% endif %}
+
+<div class="bg-white border border-base-200 rounded-xl overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-base-50 text-base-600">
+      <tr>
+        <th class="text-left px-4 py-2 font-medium">Fecha</th>
+        <th class="text-left px-4 py-2 font-medium">Obra</th>
+        <th class="text-left px-4 py-2 font-medium">Maquinaria</th>
+        <th class="text-right px-4 py-2 font-medium">Horas</th>
+        <th class="text-right px-4 py-2 font-medium">Costo</th>
+        <th class="text-left px-4 py-2 font-medium">Estado gasto</th>
+        <th class="text-right px-4 py-2 font-medium">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in object_list %}
+      <tr class="border-t border-base-100 hover:bg-base-50 {% if u.gasto.estado == 'ANULADO' %}opacity-60{% endif %}">
+        <td class="px-4 py-2">{{ u.fecha|date:"d/m/Y" }}</td>
+        <td class="px-4 py-2">
+          <a href="{% url 'obras:detail' u.obra_id %}" class="text-primary-600 hover:underline">{{ u.obra.nombre }}</a>
+        </td>
+        <td class="px-4 py-2">
+          <a href="{% url 'maquinaria:maquinaria_detail' u.maquinaria_id %}" class="text-primary-600 hover:underline">
+            {{ u.maquinaria.nombre }}
+          </a>
+        </td>
+        <td class="px-4 py-2 text-right font-semibold">{{ u.horas }}</td>
+        <td class="px-4 py-2 text-right">${{ u.gasto.monto|floatformat:2|intcomma }}</td>
+        <td class="px-4 py-2">
+          {% if u.gasto.estado == 'APROBADO' %}
+            <span class="px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800">Aprobado</span>
+          {% elif u.gasto.estado == 'BORRADOR' %}
+            <span class="px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">Borrador</span>
+          {% else %}
+            <span class="px-2 py-0.5 rounded text-xs font-medium bg-rose-100 text-rose-800">Anulado</span>
+          {% endif %}
+        </td>
+        <td class="px-4 py-2 text-right whitespace-nowrap">
+          {% if u.gasto.estado != 'ANULADO' %}
+            <a href="{% url 'maquinaria:uso_update' u.pk %}"
+               class="inline-flex items-center px-2 py-1 text-blue-600 hover:bg-blue-50 rounded" title="Editar">
+              <i class="ti ti-edit text-base"></i>
+            </a>
+            <form method="post" action="{% url 'maquinaria:uso_anular' u.pk %}?obra={{ u.obra_id }}" class="inline">
+              {% csrf_token %}
+              <button type="submit"
+                      class="inline-flex items-center px-2 py-1 text-amber-600 hover:bg-amber-50 rounded"
+                      title="Anular"
+                      onclick="return confirm('¿Anular este uso?')">
+                <i class="ti ti-ban text-base"></i>
+              </button>
+            </form>
+          {% else %}
+            <span class="text-base-400 text-xs">—</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" class="px-4 py-6 text-center text-base-400">Sin usos</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% include 'sgco/_pagination.html' %}
+{% endblock %}
