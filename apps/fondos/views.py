@@ -5,6 +5,7 @@ from django.views.generic import ListView, CreateView, UpdateView, DeleteView, V
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
 from apps.obras.models import Obra
+from apps.core.permissions import SGCOStaffRequiredMixin
 from .models import AsignacionFondo
 from .services import anular_asignacion
 
@@ -103,8 +104,12 @@ class AsignacionFondoUpdateView(LoginRequiredMixin, UpdateView):
         return ctx
 
 
-class AsignacionFondoAnularView(LoginRequiredMixin, View):
-    """Anula la asignación (no se borra físicamente)."""
+class AsignacionFondoAnularView(SGCOStaffRequiredMixin, View):
+    """Anula la asignación (no se borra físicamente).
+
+    Requiere usuario staff (separable mínimo de autenticación).
+    La matriz fina de permisos está PENDIENTE DE VALIDACIÓN CON CLIENTE.
+    """
     def post(self, request, pk):
         a = get_object_or_404(AsignacionFondo, pk=pk)
         anular_asignacion(a)

@@ -56,7 +56,7 @@ class Command(BaseCommand):
         with transaction.atomic():
             user = User.objects.first() or User.objects.create_user('admin', 'admin@sgco.local', 'admin123')
             obras = self._obras()
-            asignaciones = self._asignaciones(obras)
+            asignaciones = self._asignaciones(obras, user)
             proveedores = self._proveedores()
             materiales = self._materiales()
             empleados = self._empleados()
@@ -133,7 +133,7 @@ class Command(BaseCommand):
             ),
         ]
 
-    def _asignaciones(self, obras):
+    def _asignaciones(self, obras, user):
         asignaciones = []
         planes = [
             (Decimal('500000.00'), Decimal('150000.00'), Decimal('80000.00')),
@@ -149,6 +149,7 @@ class Command(BaseCommand):
                 monto=inicial,
                 tipo=TipoAsignacionFondoChoices.INICIAL,
                 referencia=f'Asignación inicial {obra.id}',
+                usuario=user,
             ))
             if ampliacion:
                 asignaciones.append(AsignacionFondo.objects.create(
@@ -157,6 +158,7 @@ class Command(BaseCommand):
                     monto=ampliacion,
                     tipo=TipoAsignacionFondoChoices.AMPLIACION,
                     referencia=f'Ampliación presupuestaria #{obra.id}',
+                    usuario=user,
                 ))
         return asignaciones
 

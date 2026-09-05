@@ -193,9 +193,11 @@ class FacturaCreateView(LoginRequiredMixin, CreateView):
             estado_factura=form.cleaned_data['estado'],
             usuario=self.request.user,
         )
-        # Reemplazar el save por defecto: la factura ya está creada
+        # Reemplazar el save por defecto: la factura ya está creada.
+        # Devolvemos un redirect al success_url para evitar el render
+        # del template de form inválido.
         self.object = factura
-        return self.response_class()
+        return redirect(self.get_success_url())
 
     def get_success_url(self):
         obra_id = self.request.GET.get('obra') or self.request.POST.get('obra')

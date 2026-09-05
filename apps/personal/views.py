@@ -10,6 +10,7 @@ from django.contrib import messages
 from django.db.models import Sum, Count
 
 from apps.obras.models import Obra
+from apps.core.permissions import SGCOStaffRequiredMixin
 from apps.finanzas.services import anular_gasto
 from .models import Empleado, Nomina, NominaDetalle
 from .services import recalcular_total_nomina
@@ -222,7 +223,7 @@ class NominaDetailView(LoginRequiredMixin, DetailView):
         return ctx
 
 
-class NominaRecalcularView(LoginRequiredMixin, View):
+class NominaRecalcularView(SGCOStaffRequiredMixin, View):
     """Recalcula el total de la nómina a partir de sus detalles."""
     def post(self, request, pk):
         n = get_object_or_404(Nomina, pk=pk)
@@ -234,7 +235,7 @@ class NominaRecalcularView(LoginRequiredMixin, View):
         return redirect('personal:nomina_detail', pk=n.pk)
 
 
-class NominaAnularView(LoginRequiredMixin, View):
+class NominaAnularView(SGCOStaffRequiredMixin, View):
     def post(self, request, pk):
         n = get_object_or_404(Nomina, pk=pk)
         anular_gasto(n.gasto)

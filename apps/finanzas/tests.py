@@ -32,7 +32,8 @@ from apps.maquinaria.models import Maquinaria
 
 class FinanzasServicesTests(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username='u', password='x')
+        self.user = User.objects.create_user(username='u', password='x',
+is_staff=True,)
         self.obra = Obra.objects.create(codigo=f'OBR-TEST-{uuid.uuid4().hex[:8]}', nombre='Obra A',
             ubicacion='CDMX',
             fecha_inicio=date(2026, 1, 1),
@@ -58,29 +59,29 @@ class FinanzasServicesTests(TestCase):
             fecha=date(2026, 1, 1),
             monto=Decimal('100000.00'),
             tipo=TipoAsignacionFondoChoices.INICIAL,
-        )
+            usuario=self.user,)
         self.assertEqual(total_asignado(self.obra), Decimal('100000.00'))
 
     def test_ampliacion(self):
         AsignacionFondo.objects.create(
             obra=self.obra, fecha=date(2026, 1, 1), monto=Decimal('100000'),
             tipo=TipoAsignacionFondoChoices.INICIAL,
-        )
+            usuario=self.user,)
         AsignacionFondo.objects.create(
             obra=self.obra, fecha=date(2026, 6, 1), monto=Decimal('50000'),
             tipo=TipoAsignacionFondoChoices.AMPLIACION,
-        )
+            usuario=self.user,)
         self.assertEqual(total_asignado(self.obra), Decimal('150000'))
 
     def test_reduccion(self):
         AsignacionFondo.objects.create(
             obra=self.obra, fecha=date(2026, 1, 1), monto=Decimal('100000'),
             tipo=TipoAsignacionFondoChoices.INICIAL,
-        )
+            usuario=self.user,)
         AsignacionFondo.objects.create(
             obra=self.obra, fecha=date(2026, 6, 1), monto=Decimal('30000'),
             tipo=TipoAsignacionFondoChoices.REDUCCION,
-        )
+            usuario=self.user,)
         self.assertEqual(total_asignado(self.obra), Decimal('130000'))
 
     def test_total_asignado_sin_asignaciones(self):
@@ -91,7 +92,7 @@ class FinanzasServicesTests(TestCase):
         AsignacionFondo.objects.create(
             obra=self.obra, fecha=date(2026, 1, 1), monto=Decimal('100000'),
             tipo=TipoAsignacionFondoChoices.INICIAL,
-        )
+            usuario=self.user,)
         GastoObra.objects.create(
             obra=self.obra, fecha=date(2026, 2, 1),
             tipo_gasto=TipoGastoChoices.MATERIAL, monto=Decimal('10000'),
@@ -104,7 +105,7 @@ class FinanzasServicesTests(TestCase):
         AsignacionFondo.objects.create(
             obra=self.obra, fecha=date(2026, 1, 1), monto=Decimal('100000'),
             tipo=TipoAsignacionFondoChoices.INICIAL,
-        )
+            usuario=self.user,)
         GastoObra.objects.create(
             obra=self.obra, fecha=date(2026, 2, 1),
             tipo_gasto=TipoGastoChoices.MATERIAL, monto=Decimal('10000'),
@@ -117,7 +118,7 @@ class FinanzasServicesTests(TestCase):
         AsignacionFondo.objects.create(
             obra=self.obra, fecha=date(2026, 1, 1), monto=Decimal('100000'),
             tipo=TipoAsignacionFondoChoices.INICIAL,
-        )
+            usuario=self.user,)
         g = GastoObra.objects.create(
             obra=self.obra, fecha=date(2026, 2, 1),
             tipo_gasto=TipoGastoChoices.MATERIAL, monto=Decimal('10000'),
@@ -131,7 +132,7 @@ class FinanzasServicesTests(TestCase):
         AsignacionFondo.objects.create(
             obra=self.obra, fecha=date(2026, 1, 1), monto=Decimal('100000'),
             tipo=TipoAsignacionFondoChoices.INICIAL,
-        )
+            usuario=self.user,)
         GastoObra.objects.create(
             obra=self.obra, fecha=date(2026, 2, 1),
             tipo_gasto=TipoGastoChoices.MATERIAL, monto=Decimal('25000'),
@@ -144,7 +145,7 @@ class FinanzasServicesTests(TestCase):
         AsignacionFondo.objects.create(
             obra=self.obra, fecha=date(2026, 1, 1), monto=Decimal('100000'),
             tipo=TipoAsignacionFondoChoices.INICIAL,
-        )
+            usuario=self.user,)
         GastoObra.objects.create(
             obra=self.obra, fecha=date(2026, 2, 1),
             tipo_gasto=TipoGastoChoices.MATERIAL, monto=Decimal('25000'),
@@ -232,7 +233,8 @@ class FinanzasServicesTests(TestCase):
 class ConstraintsTests(TestCase):
     def setUp(self):
         from django.contrib.auth.models import User
-        self.user = User.objects.create_user(username='tester', password='x')
+        self.user = User.objects.create_user(username='tester', password='x',
+is_staff=True,)
         self.obra = Obra.objects.create(codigo=f'OBR-TEST-{uuid.uuid4().hex[:8]}', nombre='Obra', ubicacion='X',
             fecha_inicio=date(2026, 1, 1),
             fecha_fin_estimada=date(2026, 12, 31),

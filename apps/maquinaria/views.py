@@ -10,6 +10,7 @@ from django.contrib import messages
 from django.db.models import Sum
 
 from apps.obras.models import Obra
+from apps.core.permissions import SGCOStaffRequiredMixin
 from apps.finanzas.services import anular_gasto
 from .models import Maquinaria, UsoMaquinaria
 
@@ -184,7 +185,7 @@ class UsoUpdateView(LoginRequiredMixin, UpdateView):
 # NOTA: UsoMaquinaria NO se borra físicamente. Se anula vía UsoAnularView.
 
 
-class UsoAnularView(LoginRequiredMixin, View):
+class UsoAnularView(SGCOStaffRequiredMixin, View):
     def post(self, request, pk):
         u = get_object_or_404(UsoMaquinaria, pk=pk)
         anular_gasto(u.gasto)

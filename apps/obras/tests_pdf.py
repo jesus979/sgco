@@ -21,7 +21,8 @@ from apps.inventario.models import Material
 class ReportePDFTests(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.user = User.objects.create_user(username='tester', password='x')
+        cls.user = User.objects.create_user(username='tester', password='x',
+is_staff=True,)
 
     def setUp(self):
         self.client.login(username='tester', password='x')
@@ -34,7 +35,7 @@ class ReportePDFTests(TestCase):
             obra=self.obra, fecha=date(2026, 1, 1),
             monto=Decimal('50000'),
             tipo=TipoAsignacionFondoChoices.INICIAL,
-        )
+            usuario=self.user,)
         m = Material.objects.create(
             nombre='Cemento', unidad='saco', categoria='construccion',
         )
@@ -94,7 +95,8 @@ class ReportePDFTests(TestCase):
 class DashboardChartsTests(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.user = User.objects.create_user(username='t', password='x')
+        cls.user = User.objects.create_user(username='t', password='x',
+is_staff=True,)
 
     def setUp(self):
         self.client.login(username='t', password='x')

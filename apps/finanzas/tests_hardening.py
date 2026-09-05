@@ -76,7 +76,8 @@ class Problema1ObraTests(TestCase):
 
     def test_codigo_es_unico(self):
         from django.contrib.auth.models import User
-        self.user = User.objects.create_user(username='tester', password='x')
+        self.user = User.objects.create_user(username='tester', password='x',
+is_staff=True,)
         make_obra(codigo='OBR-UNIQ')
         with self.assertRaises(IntegrityError):
             with transaction.atomic():
@@ -121,7 +122,8 @@ class Problema2GastoObraTests(TestCase):
     """Problema 2: GastoObra con validaciones."""
 
     def setUp(self):
-        self.user = User.objects.create_user('u', password='x')
+        self.user = User.objects.create_user('u', password='x',
+is_staff=True,)
         self.obra = make_obra()
 
     def test_monto_debe_ser_positivo(self):
@@ -154,7 +156,7 @@ class Problema2GastoObraTests(TestCase):
         AsignacionFondo.objects.create(
             obra=self.obra, fecha=date(2026, 1, 1),
             monto=Decimal('1000'), tipo=TipoAsignacionFondoChoices.INICIAL,
-        )
+            usuario=self.user,)
         GastoObra.objects.create(
             obra=self.obra, fecha=date(2026, 2, 1),
             tipo_gasto=TipoGastoChoices.MATERIAL,
@@ -167,7 +169,7 @@ class Problema2GastoObraTests(TestCase):
         AsignacionFondo.objects.create(
             obra=self.obra, fecha=date(2026, 1, 1),
             monto=Decimal('1000'), tipo=TipoAsignacionFondoChoices.INICIAL,
-        )
+            usuario=self.user,)
         GastoObra.objects.create(
             obra=self.obra, fecha=date(2026, 2, 1),
             tipo_gasto=TipoGastoChoices.MATERIAL,
@@ -181,7 +183,7 @@ class Problema2GastoObraTests(TestCase):
         AsignacionFondo.objects.create(
             obra=self.obra, fecha=date(2026, 1, 1),
             monto=Decimal('1000'), tipo=TipoAsignacionFondoChoices.INICIAL,
-        )
+            usuario=self.user,)
         g = GastoObra.objects.create(
             obra=self.obra, fecha=date(2026, 2, 1),
             tipo_gasto=TipoGastoChoices.MATERIAL,
@@ -207,7 +209,8 @@ class Problema3NoBorrarGastoTests(TestCase):
 
     def setUp(self):
         from django.contrib.auth.models import User
-        self.user = User.objects.create_user('u', password='x')
+        self.user = User.objects.create_user('u', password='x',
+is_staff=True,)
         self.obra = make_obra()
 
     def test_delete_view_ya_no_existe_en_frontend(self):
@@ -235,7 +238,8 @@ class Problema4FacturaCreaGastoTests(TestCase):
 
     def setUp(self):
         from django.contrib.auth.models import User
-        self.user = User.objects.create_user('u', password='x')
+        self.user = User.objects.create_user('u', password='x',
+is_staff=True,)
         self.obra = make_obra()
         self.proveedor = Proveedor.objects.create(
             nombre='Prov', identificacion=f'P-{uuid.uuid4().hex[:6]}',
@@ -277,7 +281,8 @@ class Problema5OtroGastoTests(TestCase):
 
     def setUp(self):
         from django.contrib.auth.models import User
-        self.user = User.objects.create_user('u', password='x')
+        self.user = User.objects.create_user('u', password='x',
+is_staff=True,)
         self.obra = make_obra()
 
     def test_otro_gasto_no_tiene_campo_monto(self):
@@ -303,7 +308,8 @@ class Problema6FacturaConsistenciaTests(TestCase):
 
     def setUp(self):
         from django.contrib.auth.models import User
-        self.user = User.objects.create_user('u', password='x')
+        self.user = User.objects.create_user('u', password='x',
+is_staff=True,)
         self.obra = make_obra()
         self.proveedor = Proveedor.objects.create(
             nombre='Prov', identificacion=f'P-{uuid.uuid4().hex[:6]}',
@@ -351,7 +357,8 @@ class Problema7InventarioTests(TestCase):
     """Problema 7: Inventario no permite stock negativo."""
 
     def setUp(self):
-        self.user = User.objects.create_user('u', password='x')
+        self.user = User.objects.create_user('u', password='x',
+is_staff=True,)
         self.obra = make_obra()
         self.material = Material.objects.create(
             nombre='Cemento', unidad='saco', categoria='construccion',
@@ -426,7 +433,8 @@ class Problema8TransferenciaTests(TestCase):
     """Problema 8: Transferencia con obra_origen y obra_destino explícitos."""
 
     def setUp(self):
-        self.user = User.objects.create_user('u', password='x')
+        self.user = User.objects.create_user('u', password='x',
+is_staff=True,)
         self.obra_a = make_obra(codigo='OBR-A')
         self.obra_b = make_obra(codigo='OBR-B')
         self.material = Material.objects.create(
@@ -492,7 +500,8 @@ class Problema9InventarioCostoTests(TestCase):
     """Problema 9: costo_unitario_promedio y costo_total en InventarioObra."""
 
     def setUp(self):
-        self.user = User.objects.create_user('u', password='x')
+        self.user = User.objects.create_user('u', password='x',
+is_staff=True,)
         self.obra = make_obra()
         self.material = Material.objects.create(
             nombre='Cemento', unidad='saco', categoria='construccion',
@@ -542,7 +551,8 @@ class Problema10NominaTests(TestCase):
 
     def setUp(self):
         from django.contrib.auth.models import User
-        self.user = User.objects.create_user('u', password='x')
+        self.user = User.objects.create_user('u', password='x',
+is_staff=True,)
         self.obra = make_obra()
         self.empleado = Empleado.objects.create(
             cedula=f'E-{uuid.uuid4().hex[:6]}', nombres='A', apellidos='B',
@@ -605,7 +615,8 @@ class Problema11UsoMaquinariaTests(TestCase):
 
     def setUp(self):
         from django.contrib.auth.models import User
-        self.user = User.objects.create_user('u', password='x')
+        self.user = User.objects.create_user('u', password='x',
+is_staff=True,)
         self.obra = make_obra()
         self.maquinaria = Maquinaria.objects.create(
             nombre='Excavadora', costo_hora=Decimal('100'),
@@ -625,7 +636,8 @@ class Problema12CentralizacionFinancieraTests(TestCase):
     """Problema 12: Lógica financiera centralizada en un solo lugar."""
     def setUp(self):
         from django.contrib.auth.models import User
-        self.user = User.objects.create_user('u', password='x')
+        self.user = User.objects.create_user('u', password='x',
+is_staff=True,)
 
     def test_resumen_financiero_obras_una_sola_pasada(self):
         o1 = make_obra(codigo='OBR-FIN1')
@@ -633,11 +645,11 @@ class Problema12CentralizacionFinancieraTests(TestCase):
         AsignacionFondo.objects.create(
             obra=o1, fecha=date(2026, 1, 1),
             monto=Decimal('1000'), tipo=TipoAsignacionFondoChoices.INICIAL,
-        )
+            usuario=self.user,)
         AsignacionFondo.objects.create(
             obra=o2, fecha=date(2026, 1, 1),
             monto=Decimal('2000'), tipo=TipoAsignacionFondoChoices.INICIAL,
-        )
+            usuario=self.user,)
         GastoObra.objects.create(
             obra=o1, fecha=date(2026, 2, 1),
             tipo_gasto=TipoGastoChoices.MATERIAL,
@@ -663,7 +675,7 @@ class Problema12CentralizacionFinancieraTests(TestCase):
         a = AsignacionFondo.objects.create(
             obra=obra, fecha=date(2026, 1, 1),
             monto=Decimal('1000'), tipo=TipoAsignacionFondoChoices.INICIAL,
-        )
+            usuario=self.user,)
         a.anulada = True
         a.save()
         self.assertEqual(total_asignado(obra), Decimal('0'))
@@ -676,14 +688,15 @@ class CentralizacionNoDuplicacionTests(TestCase):
     """
     def setUp(self):
         from django.contrib.auth.models import User
-        self.user = User.objects.create_user('u', password='x')
+        self.user = User.objects.create_user('u', password='x',
+is_staff=True,)
 
     def test_saldo_es_diferencia_de_totales(self):
         obra = make_obra()
         AsignacionFondo.objects.create(
             obra=obra, fecha=date(2026, 1, 1),
             monto=Decimal('5000'), tipo=TipoAsignacionFondoChoices.INICIAL,
-        )
+            usuario=self.user,)
         GastoObra.objects.create(
             obra=obra, fecha=date(2026, 2, 1),
             tipo_gasto=TipoGastoChoices.MATERIAL,

@@ -27,7 +27,8 @@ from apps.finanzas.models import GastoObra, OtroGasto
 class SmokeFrontendTests(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.user = User.objects.create_user(username='tester', password='x')
+        cls.user = User.objects.create_user(username='tester', password='x',
+is_staff=True,)
 
     def setUp(self):
         self.client.login(username='tester', password='x')
@@ -41,7 +42,7 @@ class SmokeFrontendTests(TestCase):
             fecha=date(2026, 1, 1),
             monto=Decimal('100000'),
             tipo=TipoAsignacionFondoChoices.INICIAL,
-        )
+            usuario=self.user,)
         self.gasto = GastoObra.objects.create(
             obra=self.obra,
             fecha=date(2026, 2, 1),
@@ -78,7 +79,7 @@ class SmokeFrontendTests(TestCase):
         AsignacionFondo.objects.create(
             obra=otra, fecha=date(2026, 3, 1),
             monto=Decimal('50000'), tipo=TipoAsignacionFondoChoices.INICIAL,
-        )
+            usuario=self.user,)
         r = self.client.get(f"{reverse('fondos:list')}?obra={self.obra.pk}")
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, self.obra.nombre)

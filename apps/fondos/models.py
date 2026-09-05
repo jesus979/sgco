@@ -39,8 +39,6 @@ class AsignacionFondo(models.Model):
     usuario = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
-        null=True,
-        blank=True,
         related_name='asignaciones_creadas',
     )
     anulada = models.BooleanField(default=False)

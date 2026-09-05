@@ -19,7 +19,8 @@ from .services import (
 
 class InventarioServicesTests(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username='op', password='x')
+        self.user = User.objects.create_user(username='op', password='x',
+is_staff=True,)
         self.obra = Obra.objects.create(codigo=f'OBR-TEST-{uuid.uuid4().hex[:8]}', nombre='Obra', ubicacion='X',
             fecha_inicio=date(2026, 1, 1),
             fecha_fin_estimada=date(2026, 12, 31),

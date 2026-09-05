@@ -1,12 +1,31 @@
 # SGCO — Reporte de Hardening
 
 > Fase de endurecimiento técnico y funcional.
-> **Versión 1.2** — 2026-09-04
+> **Versión 1.2.1** — 2026-09-05
 > Estado: **APROBADO**
 
 Este documento describe los cambios aplicados durante la fase de
 hardening, las decisiones tomadas y los puntos que quedan pendientes
 de validación con el cliente.
+
+---
+
+## 0. v1.2.1 — Endurecimiento quirúrgico (cambios respecto a v1.2)
+
+**Fase QUIRÚRGICA**: cierre de hallazgos de la revisión posterior a v1.2.
+
+| Objetivo | Cambio | Archivo de prueba |
+|---|---|---|
+| 1. `GastoObra.usuario` NOT NULL | Ya estaba en v1.2. `null=False` confirmado. | `test_modelo_usuario_es_not_null` |
+| 2. `AsignacionFondo.usuario` NOT NULL | Removido `null=True, blank=True`. Migración `0003_alter_asignacionfondo_usuario.py`. | `test_modelo_usuario_es_not_null` |
+| 3. Eliminar `FacturaDeleteView` completamente | Verificado: clase eliminada, URL no existe, no hay `class FacturaDeleteView` ni `.as_view(` en `views.py`. | `test_no_existe_url_factura_delete`, `test_no_existe_clase_factura_delete_view`, `test_views_no_referencian_factura_delete` |
+| 4. `AsignacionFondo` edición restringida | `save()` ya bloquea cambios a `obra`/`monto`/`tipo`. Form ya solo expone `referencia` y `observaciones`. | `test_cambiar_obra_bloqueado`, `test_cambiar_monto_bloqueado`, `test_cambiar_tipo_bloqueado`, `test_referencia_editable`, `test_observaciones_editable`, `test_formulario_update_view_solo_campos_seguros`, `test_patron_correcto_500_a_600` |
+| 5. Sin doble asignación de usuario en factura | `FacturaCreateView.form_valid` ahora hace `redirect(self.get_success_url())` en lugar de `self.response_class()` (que fallaba). El servicio `crear_gasto_con_factura(..., usuario=self.request.user)` asigna el usuario una sola vez. | `test_servicio_asigna_usuario`, `test_view_asigna_usuario_correcto` |
+| 6. Permisos realmente conectados | `SGCOStaffRequiredMixin` aplicado a las 6 acciones de Anular/Recalcular: `AsignacionFondoAnularView`, `GastoObraAnularView`, `OtroGastoAnularView`, `NominaAnularView`, `NominaRecalcularView`, `UsoAnularView`. Usuario no-staff recibe 403. | `test_no_staff_no_puede_anular_asignacion`, `test_staff_puede_anular_asignacion`, `test_superusuario_puede_anular` |
+| 7. Documentación | Este archivo está actualizado. README y database.md sin cambios estructurales en esta fase. |
+| 8. Tests de regresión | 19 tests nuevos en `apps/finanzas/tests_v121.py` cubriendo los 8 objetivos. |
+
+**Resultado final:** 144/144 tests OK (125 originales + 19 nuevos de v1.2.1).
 
 ---
 

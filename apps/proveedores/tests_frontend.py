@@ -22,7 +22,8 @@ from apps.finanzas.services import crear_gasto_con_factura
 class ProveedoresFrontendTests(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.user = User.objects.create_user(username='t', password='x')
+        cls.user = User.objects.create_user(username='t', password='x',
+is_staff=True,)
 
     def setUp(self):
         self.client.login(username='t', password='x')
@@ -105,7 +106,8 @@ class ProveedoresFrontendTests(TestCase):
 class InventarioFrontendTests(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.user = User.objects.create_user(username='t', password='x')
+        cls.user = User.objects.create_user(username='t', password='x',
+is_staff=True,)
 
     def setUp(self):
         self.client.login(username='t', password='x')
@@ -169,7 +171,8 @@ class InventarioFrontendTests(TestCase):
 class PersonalFrontendTests(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.user = User.objects.create_user(username='t', password='x')
+        cls.user = User.objects.create_user(username='t', password='x',
+is_staff=True,)
 
     def setUp(self):
         self.client.login(username='t', password='x')
@@ -235,7 +238,8 @@ class PersonalFrontendTests(TestCase):
 class MaquinariaFrontendTests(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.user = User.objects.create_user(username='t', password='x')
+        cls.user = User.objects.create_user(username='t', password='x',
+is_staff=True,)
 
     def setUp(self):
         self.client.login(username='t', password='x')

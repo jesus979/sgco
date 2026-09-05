@@ -9,6 +9,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
 from apps.obras.models import Obra
 from apps.core.choices import EstadoGastoChoices
+from apps.core.permissions import SGCOStaffRequiredMixin
 from .models import GastoObra, OtroGasto
 from .services import anular_gasto
 
@@ -155,7 +156,7 @@ class GastoObraDetailView(LoginRequiredMixin, DetailView):
         return ctx
 
 
-class GastoObraAnularView(LoginRequiredMixin, View):
+class GastoObraAnularView(SGCOStaffRequiredMixin, View):
     def post(self, request, pk):
         g = get_object_or_404(GastoObra, pk=pk)
         anular_gasto(g)
@@ -271,7 +272,7 @@ class OtroGastoUpdateView(LoginRequiredMixin, UpdateView):
 # OtroGastoAnularView (POST), que anula el GastoObra subyacente.
 
 
-class OtroGastoAnularView(LoginRequiredMixin, View):
+class OtroGastoAnularView(SGCOStaffRequiredMixin, View):
     """Anula el GastoObra asociado (OtroGasto no mantiene estado propio)."""
     def post(self, request, pk):
         o = get_object_or_404(OtroGasto, pk=pk)
