@@ -44,7 +44,7 @@ class ReportePDFTests(TestCase):
             folio='F-PDF', fecha_emision=date(2026, 2, 1),
             total=Decimal('5000'), impuesto=Decimal('800'),
             estado=EstadoGastoChoices.APROBADO,
-        )
+            usuario=self.user,)
         from apps.proveedores.models import DetalleFactura
         DetalleFactura.objects.create(
             factura=f, material=m,
@@ -108,6 +108,7 @@ class DashboardChartsTests(TestCase):
             tipo_gasto=TipoGastoChoices.MATERIAL,
             monto=Decimal('1000'),
             estado=EstadoGastoChoices.APROBADO,
+            usuario=self.user,
         )
 
     def test_dashboard_tiene_datos_de_graficos(self):

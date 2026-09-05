@@ -191,10 +191,8 @@ class FacturaCreateView(LoginRequiredMixin, CreateView):
             tipo_gasto=TG.MATERIAL,
             estado=EC.BORRADOR,
             estado_factura=form.cleaned_data['estado'],
+            usuario=self.request.user,
         )
-        # Asignar usuario al gasto (no en la factura, que no lo tiene)
-        _gasto.usuario = self.request.user
-        _gasto.save(update_fields=['usuario', 'updated_at'])
         # Reemplazar el save por defecto: la factura ya está creada
         self.object = factura
         return self.response_class()
@@ -229,17 +227,9 @@ class FacturaUpdateView(LoginRequiredMixin, UpdateView):
 # GastoObra aprobado. El admin/protección de BD ya lo impide. Si
 # realmente se necesita "eliminar" una factura errónea, se debe
 # primero anular su GastoObra asociado.
-
-
-class FacturaDeleteView(LoginRequiredMixin, DeleteView):
-    model = FacturaProveedor
-    template_name = 'sgco/_delete.html'
-    success_url = reverse_lazy('proveedores:factura_list')
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx['model_name'] = 'Factura'
-        return ctx
+#
+# (No existe FacturaDeleteView en v1.2: solo se permite ANULAR el
+# gasto asociado, lo que deja la factura como registro histórico.)
 
 
 class FacturaDetailView(LoginRequiredMixin, DetailView):

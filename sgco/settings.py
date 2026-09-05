@@ -89,27 +89,50 @@ WSGI_APPLICATION = 'sgco.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+#
 # Configuración por defecto: SQLite para desarrollo local.
-# Para producción, usar PostgreSQL vía .env:
+#
+# Para producción, usar PostgreSQL vía variables de entorno
+# (nombres aceptados en orden de prioridad):
+#   POSTGRES_DB  / DB_NAME      - nombre de la base de datos
+#   POSTGRES_USER/ DB_USER      - usuario
+#   POSTGRES_PASSWORD / DB_PASSWORD - contraseña
+#   POSTGRES_HOST / DB_HOST      - host (default 127.0.0.1)
+#   POSTGRES_PORT / DB_PORT      - puerto (default 5432)
+#   POSTGRES_CONN_MAX_AGE / DB_CONN_MAX_AGE - persistencia de conexión
+#
+# Activar PostgreSQL con:
 #   DB_ENGINE=django.db.backends.postgresql
-#   DB_NAME=sgco
-#   DB_USER=sgco
-#   DB_PASSWORD=...
-#   DB_HOST=127.0.0.1
-#   DB_PORT=5432
+#
+# Ejemplo de .env para PostgreSQL:
+#   DB_ENGINE=django.db.backends.postgresql
+#   POSTGRES_DB=sgco
+#   POSTGRES_USER=sgco
+#   POSTGRES_PASSWORD=********
+#   POSTGRES_HOST=127.0.0.1
+#   POSTGRES_PORT=5432
 
 DB_ENGINE = config('DB_ENGINE', default='django.db.backends.sqlite3')
+
+
+def _pg_or_db(name, default=None):
+    """Lee POSTGRES_<name> si existe, si no DB_<name>, si no default."""
+    v = config(f'POSTGRES_{name}', default=None)
+    if v is not None:
+        return v
+    return config(f'DB_{name}', default=default)
+
 
 if DB_ENGINE == 'django.db.backends.postgresql':
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': config('DB_NAME', default='sgco'),
-            'USER': config('DB_USER', default='sgco'),
-            'PASSWORD': config('DB_PASSWORD', default=''),
-            'HOST': config('DB_HOST', default='127.0.0.1'),
-            'PORT': config('DB_PORT', default='5432'),
-            'CONN_MAX_AGE': config('DB_CONN_MAX_AGE', default=60, cast=int),
+            'NAME': _pg_or_db('NAME', default='sgco'),
+            'USER': _pg_or_db('USER', default='sgco'),
+            'PASSWORD': _pg_or_db('PASSWORD', default=''),
+            'HOST': _pg_or_db('HOST', default='127.0.0.1'),
+            'PORT': _pg_or_db('PORT', default='5432'),
+            'CONN_MAX_AGE': _pg_or_db('CONN_MAX_AGE', default=60, cast=int),
             'OPTIONS': {
                 'connect_timeout': 10,
             },
@@ -119,7 +142,7 @@ else:
     DATABASES = {
         'default': {
             'ENGINE': DB_ENGINE,
-            'NAME': config('DB_NAME', default=str(BASE_DIR / 'db.sqlite3')),
+            'NAME': _pg_or_db('NAME', default=str(BASE_DIR / 'db.sqlite3')),
         }
     }
 

@@ -133,9 +133,11 @@ class NominaListView(LoginRequiredMixin, ListView):
 
 
 class NominaCreateView(LoginRequiredMixin, CreateView):
-    """Crear nómina. El GastoObra se crea automáticamente vía servicio.
+    """Crear nómina: cabecera sin líneas (se agregan después).
 
-    Por eso `gasto` no está en el form.
+    La cabecera se crea con `monto=0` y sin detalles. Las líneas se
+    agregan en `/nominas/detalles/nuevo/?nomina=<id>`. Después se
+    puede recalcular el total con el botón "Recalcular total".
     """
     model = Nomina
     fields = ['obra', 'fecha', 'periodo_desde', 'periodo_hasta']
@@ -147,6 +149,27 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
         if obra_id:
             initial['obra'] = obra_id
         return initial
+
+    def form_valid(self, form):
+        from decimal import Decimal
+        from apps.finanzas.services import crear_nomina_con_gasto
+        from apps.core.choices import EstadoGastoChoices as EC
+        obra = form.cleaned_data['obra']
+        fecha = form.cleaned_data['fecha']
+        periodo_desde = form.cleaned_data['periodo_desde']
+        periodo_hasta = form.cleaned_data['periodo_hasta']
+        _gasto, nomina = crear_nomina_con_gasto(
+            obra=obra,
+            fecha=fecha,
+            periodo_desde=periodo_desde,
+            periodo_hasta=periodo_hasta,
+            detalles=[],  # sin líneas al inicio
+            tipo_gasto='PERSONAL',
+            estado=EC.BORRADOR,
+            usuario=self.request.user,
+        )
+        self.object = nomina
+        return self.response_class()
 
     def get_success_url(self):
         obra_id = self.request.GET.get('obra') or self.request.POST.get('obra')

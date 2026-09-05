@@ -75,6 +75,8 @@ class Problema1ObraTests(TestCase):
     """Problema 1: Obra con codigo UNIQUE + descripcion + moneda + observaciones."""
 
     def test_codigo_es_unico(self):
+        from django.contrib.auth.models import User
+        self.user = User.objects.create_user(username='tester', password='x')
         make_obra(codigo='OBR-UNIQ')
         with self.assertRaises(IntegrityError):
             with transaction.atomic():
@@ -145,7 +147,7 @@ class Problema2GastoObraTests(TestCase):
             obra=self.obra, fecha=date(2026, 2, 1),
             tipo_gasto=TipoGastoChoices.MATERIAL,
             monto=Decimal('100'),
-        )
+            usuario=self.user,)
         self.assertEqual(g.estado, EstadoGastoChoices.BORRADOR)
 
     def test_borrador_no_afecta_saldo(self):
@@ -158,7 +160,7 @@ class Problema2GastoObraTests(TestCase):
             tipo_gasto=TipoGastoChoices.MATERIAL,
             monto=Decimal('500'),
             estado=EstadoGastoChoices.BORRADOR,
-        )
+            usuario=self.user,)
         self.assertEqual(total_gastado(self.obra), Decimal('0'))
 
     def test_aprobado_si_afecta_saldo(self):
@@ -171,7 +173,7 @@ class Problema2GastoObraTests(TestCase):
             tipo_gasto=TipoGastoChoices.MATERIAL,
             monto=Decimal('500'),
             estado=EstadoGastoChoices.APROBADO,
-        )
+            usuario=self.user,)
         self.assertEqual(total_gastado(self.obra), Decimal('500'))
         self.assertEqual(saldo(self.obra), Decimal('500'))
 
@@ -185,7 +187,7 @@ class Problema2GastoObraTests(TestCase):
             tipo_gasto=TipoGastoChoices.MATERIAL,
             monto=Decimal('500'),
             estado=EstadoGastoChoices.APROBADO,
-        )
+            usuario=self.user,)
         anular_gasto(g)
         self.assertEqual(total_gastado(self.obra), Decimal('0'))
         self.assertEqual(saldo(self.obra), Decimal('1000'))
@@ -195,7 +197,7 @@ class Problema2GastoObraTests(TestCase):
             obra=self.obra, fecha=date(2026, 2, 1),
             tipo_gasto=TipoGastoChoices.MATERIAL,
             monto=Decimal('100.50'),
-        )
+            usuario=self.user,)
         g.refresh_from_db()
         self.assertIsInstance(g.monto, Decimal)
 
@@ -204,6 +206,8 @@ class Problema3NoBorrarGastoTests(TestCase):
     """Problema 3: GastoObra NO se borra físicamente."""
 
     def setUp(self):
+        from django.contrib.auth.models import User
+        self.user = User.objects.create_user('u', password='x')
         self.obra = make_obra()
 
     def test_delete_view_ya_no_existe_en_frontend(self):
@@ -218,7 +222,7 @@ class Problema3NoBorrarGastoTests(TestCase):
             tipo_gasto=TipoGastoChoices.MATERIAL,
             monto=Decimal('500'),
             estado=EstadoGastoChoices.APROBADO,
-        )
+            usuario=self.user,)
         anular_gasto(g)
         # El registro sigue existiendo
         self.assertTrue(GastoObra.objects.filter(pk=g.pk).exists())
@@ -230,6 +234,8 @@ class Problema4FacturaCreaGastoTests(TestCase):
     """Problema 4: Factura crea su propio GastoObra atómicamente."""
 
     def setUp(self):
+        from django.contrib.auth.models import User
+        self.user = User.objects.create_user('u', password='x')
         self.obra = make_obra()
         self.proveedor = Proveedor.objects.create(
             nombre='Prov', identificacion=f'P-{uuid.uuid4().hex[:6]}',
@@ -242,7 +248,7 @@ class Problema4FacturaCreaGastoTests(TestCase):
             obra=self.obra, proveedor=self.proveedor,
             folio='F-TEST', fecha_emision=date(2026, 2, 1),
             total=Decimal('500'), impuesto=Decimal('80'),
-        )
+            usuario=self.user,)
         # La factura tiene gasto asociado
         self.assertEqual(factura.gasto, gasto)
         # El gasto es el mismo
@@ -270,6 +276,8 @@ class Problema5OtroGastoTests(TestCase):
     """Problema 5: OtroGasto no duplica monto."""
 
     def setUp(self):
+        from django.contrib.auth.models import User
+        self.user = User.objects.create_user('u', password='x')
         self.obra = make_obra()
 
     def test_otro_gasto_no_tiene_campo_monto(self):
@@ -282,6 +290,7 @@ class Problema5OtroGastoTests(TestCase):
             obra=self.obra, fecha=date(2026, 2, 1),
             concepto='Multa', comprobante='COMP-1',
             monto=Decimal('500'),
+            usuario=self.user,
         )
         self.assertEqual(otro.gasto, gasto)
         self.assertEqual(gasto.monto, Decimal('500'))
@@ -293,6 +302,8 @@ class Problema6FacturaConsistenciaTests(TestCase):
     """Problema 6: Consistencia factura = subtotal + impuesto."""
 
     def setUp(self):
+        from django.contrib.auth.models import User
+        self.user = User.objects.create_user('u', password='x')
         self.obra = make_obra()
         self.proveedor = Proveedor.objects.create(
             nombre='Prov', identificacion=f'P-{uuid.uuid4().hex[:6]}',
@@ -306,7 +317,7 @@ class Problema6FacturaConsistenciaTests(TestCase):
             obra=self.obra, proveedor=self.proveedor,
             folio='F-CONS', fecha_emision=date(2026, 2, 1),
             total=Decimal('500'), impuesto=Decimal('80'),
-        )
+            usuario=self.user,)
         DetalleFactura.objects.create(
             factura=f, material=self.material,
             cantidad=Decimal('2'), precio_unitario=Decimal('210'),
@@ -317,8 +328,8 @@ class Problema6FacturaConsistenciaTests(TestCase):
         _, f = crear_gasto_con_factura(
             obra=self.obra, proveedor=self.proveedor,
             folio='F-INC', fecha_emision=date(2026, 2, 1),
-            total=Decimal('999'),  # inconsistente
-        )
+            total=Decimal('999'),  # inconsistente,
+            usuario=self.user,)
         self.assertFalse(verificar_consistencia_factura(f))
 
     def test_actualizar_total_desde_detalles(self):
@@ -326,7 +337,7 @@ class Problema6FacturaConsistenciaTests(TestCase):
             obra=self.obra, proveedor=self.proveedor,
             folio='F-REC', fecha_emision=date(2026, 2, 1),
             total=Decimal('0'),
-        )
+            usuario=self.user,)
         DetalleFactura.objects.create(
             factura=f, material=self.material,
             cantidad=Decimal('5'), precio_unitario=Decimal('100'),
@@ -530,6 +541,8 @@ class Problema10NominaTests(TestCase):
     """Problema 10: Nómina recalcula y no recalcula en save()."""
 
     def setUp(self):
+        from django.contrib.auth.models import User
+        self.user = User.objects.create_user('u', password='x')
         self.obra = make_obra()
         self.empleado = Empleado.objects.create(
             cedula=f'E-{uuid.uuid4().hex[:6]}', nombres='A', apellidos='B',
@@ -542,7 +555,8 @@ class Problema10NominaTests(TestCase):
             obra=self.obra, fecha=date(2026, 2, 1),
             periodo_desde=date(2026, 2, 1), periodo_hasta=date(2026, 2, 15),
             detalles=[{'empleado': self.empleado, 'monto': Decimal('1500')}],
-            estado=EstadoGastoChoices.APROBADO,
+            estado=EstadoGastoChoices.BORRADOR,  # BORRADOR para poder editar
+            usuario=self.user,
         )
         # Actualizamos el monto del único detalle vía su pk
         d = n.nominas_detalle.first()
@@ -558,7 +572,8 @@ class Problema10NominaTests(TestCase):
             obra=self.obra, fecha=date(2026, 2, 1),
             periodo_desde=date(2026, 2, 1), periodo_hasta=date(2026, 2, 15),
             detalles=[{'empleado': self.empleado, 'monto': Decimal('1500')}],
-            estado=EstadoGastoChoices.APROBADO,
+            estado=EstadoGastoChoices.BORRADOR,
+            usuario=self.user,
         )
         # Forzar un valor conocido del gasto
         n.gasto.monto = Decimal('9999')
@@ -576,19 +591,21 @@ class Problema10NominaTests(TestCase):
             obra=self.obra, fecha=date(2026, 2, 1),
             periodo_desde=date(2026, 2, 1), periodo_hasta=date(2026, 2, 15),
             detalles=[{'empleado': self.empleado, 'monto': Decimal('100')}],
-        )
+            usuario=self.user,)
         with self.assertRaises(IntegrityError):
             crear_nomina_con_gasto(
                 obra=self.obra, fecha=date(2026, 2, 1),
                 periodo_desde=date(2026, 2, 1), periodo_hasta=date(2026, 2, 15),
                 detalles=[{'empleado': self.empleado, 'monto': Decimal('200')}],
-            )
+                usuario=self.user,)
 
 
 class Problema11UsoMaquinariaTests(TestCase):
     """Problema 11: UsoMaquinaria no duplica gasto, cálculo correcto."""
 
     def setUp(self):
+        from django.contrib.auth.models import User
+        self.user = User.objects.create_user('u', password='x')
         self.obra = make_obra()
         self.maquinaria = Maquinaria.objects.create(
             nombre='Excavadora', costo_hora=Decimal('100'),
@@ -598,7 +615,7 @@ class Problema11UsoMaquinariaTests(TestCase):
         g, u = crear_uso_maquinaria_con_gasto(
             obra=self.obra, maquinaria=self.maquinaria,
             fecha=date(2026, 2, 1), horas=Decimal('8'),
-        )
+            usuario=self.user,)
         # 8h * 100/h = 800
         self.assertEqual(g.monto, Decimal('800'))
         self.assertEqual(u.gasto, g)
@@ -606,6 +623,9 @@ class Problema11UsoMaquinariaTests(TestCase):
 
 class Problema12CentralizacionFinancieraTests(TestCase):
     """Problema 12: Lógica financiera centralizada en un solo lugar."""
+    def setUp(self):
+        from django.contrib.auth.models import User
+        self.user = User.objects.create_user('u', password='x')
 
     def test_resumen_financiero_obras_una_sola_pasada(self):
         o1 = make_obra(codigo='OBR-FIN1')
@@ -623,7 +643,7 @@ class Problema12CentralizacionFinancieraTests(TestCase):
             tipo_gasto=TipoGastoChoices.MATERIAL,
             monto=Decimal('300'),
             estado=EstadoGastoChoices.APROBADO,
-        )
+            usuario=self.user,)
         obras = Obra.objects.filter(id__in=[o1.id, o2.id])
         resumen = resumen_financiero_obras(obras)
         self.assertEqual(resumen[o1.id]['asignado'], Decimal('1000'))
@@ -654,6 +674,9 @@ class CentralizacionNoDuplicacionTests(TestCase):
 
     Verificamos que las funciones son consistentes entre sí.
     """
+    def setUp(self):
+        from django.contrib.auth.models import User
+        self.user = User.objects.create_user('u', password='x')
 
     def test_saldo_es_diferencia_de_totales(self):
         obra = make_obra()
@@ -666,7 +689,7 @@ class CentralizacionNoDuplicacionTests(TestCase):
             tipo_gasto=TipoGastoChoices.MATERIAL,
             monto=Decimal('1500'),
             estado=EstadoGastoChoices.APROBADO,
-        )
+            usuario=self.user,)
         self.assertEqual(
             saldo(obra),
             total_asignado(obra) - total_gastado(obra)

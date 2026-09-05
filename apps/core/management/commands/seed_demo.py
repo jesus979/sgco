@@ -63,11 +63,11 @@ class Command(BaseCommand):
             maquinas = self._maquinas()
 
             # Gastos y facturas para varias obras
-            self._gastos_y_facturas(obras, proveedores, materiales)
-            self._otros_gastos(obras, proveedores)
+            self._gastos_y_facturas(obras, proveedores, materiales, user)
+            self._otros_gastos(obras, proveedores, user)
             self._inventarios(obras, materiales, user)
-            self._nominas(obras, empleados)
-            self._uso_maquinaria(obras, maquinas)
+            self._nominas(obras, empleados, user)
+            self._uso_maquinaria(obras, maquinas, user)
 
         self.stdout.write(self.style.SUCCESS('Datos demo creados.'))
 
@@ -235,7 +235,7 @@ class Command(BaseCommand):
             for n, ma, mo, ident, p in data
         ]
 
-    def _gastos_y_facturas(self, obras, proveedores, materiales):
+    def _gastos_y_facturas(self, obras, proveedores, materiales, user):
         # Obra 0: varios gastos con factura
         obra = obras[0]
         g, f = crear_gasto_con_factura(
@@ -245,7 +245,7 @@ class Command(BaseCommand):
             tipo_gasto=TipoGastoChoices.MATERIAL,
             estado=EstadoGastoChoices.APROBADO,
             estado_factura=EstadoFacturaChoices.PAGADO,
-        )
+            usuario=user,)
         DetalleFactura.objects.create(
             factura=f, material=materiales[0],
             cantidad=Decimal('170'), precio_unitario=Decimal('500.00'),
@@ -257,7 +257,7 @@ class Command(BaseCommand):
             tipo_gasto=TipoGastoChoices.MATERIAL,
             estado=EstadoGastoChoices.APROBADO,
             estado_factura=EstadoFacturaChoices.PENDIENTE,
-        )
+            usuario=user,)
         DetalleFactura.objects.create(
             factura=f, material=materiales[3],
             cantidad=Decimal('2500'), precio_unitario=Decimal('12.50'),
@@ -272,7 +272,7 @@ class Command(BaseCommand):
             tipo_gasto=TipoGastoChoices.MATERIAL,
             estado=EstadoGastoChoices.APROBADO,
             estado_factura=EstadoFacturaChoices.PARCIAL,
-        )
+            usuario=user,)
         DetalleFactura.objects.create(
             factura=f, material=materiales[0],
             cantidad=Decimal('360'), precio_unitario=Decimal('500.00'),
@@ -284,7 +284,7 @@ class Command(BaseCommand):
             total=Decimal('45000.00'), impuesto=Decimal('6800.00'),
             tipo_gasto=TipoGastoChoices.SERVICIO,
             estado=EstadoGastoChoices.BORRADOR,
-        )
+            usuario=user,)
 
         # Obra 2
         obra = obras[2]
@@ -295,13 +295,13 @@ class Command(BaseCommand):
             tipo_gasto=TipoGastoChoices.MATERIAL,
             estado=EstadoGastoChoices.APROBADO,
             estado_factura=EstadoFacturaChoices.PAGADO,
-        )
+            usuario=user,)
         DetalleFactura.objects.create(
             factura=f, material=materiales[5],
             cantidad=Decimal('4000'), precio_unitario=Decimal('15.00'),
         )
 
-    def _otros_gastos(self, obras, proveedores):
+    def _otros_gastos(self, obras, proveedores, user):
         crear_otro_gasto(
             obra=obras[0], fecha=date(2026, 2, 20),
             concepto='Permisos municipales',
@@ -309,14 +309,14 @@ class Command(BaseCommand):
             proveedor=proveedores[2],
             monto=Decimal('15000.00'),
             estado=EstadoGastoChoices.APROBADO,
-        )
+            usuario=user,)
         crear_otro_gasto(
             obra=obras[1], fecha=date(2026, 3, 10),
             concepto='Estudio de impacto ambiental',
             comprobante='EIA-002',
             monto=Decimal('28000.00'),
             estado=EstadoGastoChoices.APROBADO,
-        )
+            usuario=user,)
 
     def _inventarios(self, obras, materiales, user):
         # Asignar algunas entradas y salidas para obra 0
@@ -344,7 +344,7 @@ class Command(BaseCommand):
             referencia='Entrada cemento puente',
         )
 
-    def _nominas(self, obras, empleados):
+    def _nominas(self, obras, empleados, user):
         # Nómina quincenal obra 0
         crear_nomina_con_gasto(
             obra=obras[0], fecha=date(2026, 1, 31),
@@ -355,7 +355,7 @@ class Command(BaseCommand):
                 {'empleado': empleados[3], 'monto': Decimal('12750.00')},
             ],
             estado=EstadoGastoChoices.APROBADO,
-        )
+            usuario=user,)
 
         crear_nomina_con_gasto(
             obra=obras[1], fecha=date(2026, 3, 31),
@@ -366,16 +366,16 @@ class Command(BaseCommand):
                 {'empleado': empleados[5], 'monto': Decimal('14250.00')},
             ],
             estado=EstadoGastoChoices.APROBADO,
-        )
+            usuario=user,)
 
-    def _uso_maquinaria(self, obras, maquinas):
+    def _uso_maquinaria(self, obras, maquinas, user):
         crear_uso_maquinaria_con_gasto(
             obra=obras[1], maquinaria=maquinas[0],
             fecha=date(2026, 3, 18), horas=Decimal('40'),
             estado=EstadoGastoChoices.APROBADO,
-        )
+            usuario=user,)
         crear_uso_maquinaria_con_gasto(
             obra=obras[0], maquinaria=maquinas[3],
             fecha=date(2026, 2, 5), horas=Decimal('20'),
             estado=EstadoGastoChoices.APROBADO,
-        )
+            usuario=user,)

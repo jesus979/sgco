@@ -96,6 +96,7 @@ class FinanzasServicesTests(TestCase):
             obra=self.obra, fecha=date(2026, 2, 1),
             tipo_gasto=TipoGastoChoices.MATERIAL, monto=Decimal('10000'),
             estado=EstadoGastoChoices.BORRADOR,
+            usuario=self.user,
         )
         self.assertEqual(total_gastado(self.obra), Decimal('0.00'))
 
@@ -108,6 +109,7 @@ class FinanzasServicesTests(TestCase):
             obra=self.obra, fecha=date(2026, 2, 1),
             tipo_gasto=TipoGastoChoices.MATERIAL, monto=Decimal('10000'),
             estado=EstadoGastoChoices.APROBADO,
+            usuario=self.user,
         )
         self.assertEqual(total_gastado(self.obra), Decimal('10000.00'))
 
@@ -120,6 +122,7 @@ class FinanzasServicesTests(TestCase):
             obra=self.obra, fecha=date(2026, 2, 1),
             tipo_gasto=TipoGastoChoices.MATERIAL, monto=Decimal('10000'),
             estado=EstadoGastoChoices.APROBADO,
+            usuario=self.user,
         )
         anular_gasto(g)
         self.assertEqual(total_gastado(self.obra), Decimal('0.00'))
@@ -133,6 +136,7 @@ class FinanzasServicesTests(TestCase):
             obra=self.obra, fecha=date(2026, 2, 1),
             tipo_gasto=TipoGastoChoices.MATERIAL, monto=Decimal('25000'),
             estado=EstadoGastoChoices.APROBADO,
+            usuario=self.user,
         )
         self.assertEqual(saldo(self.obra), Decimal('75000.00'))
 
@@ -145,6 +149,7 @@ class FinanzasServicesTests(TestCase):
             obra=self.obra, fecha=date(2026, 2, 1),
             tipo_gasto=TipoGastoChoices.MATERIAL, monto=Decimal('25000'),
             estado=EstadoGastoChoices.APROBADO,
+            usuario=self.user,
         )
         self.assertEqual(porcentaje_ejecucion(self.obra), Decimal('25.0000'))
 
@@ -160,6 +165,7 @@ class FinanzasServicesTests(TestCase):
             folio='F-1',
             fecha_emision=date(2026, 2, 1),
             total=Decimal('5000.00'),
+            usuario=self.user,
         )
         self.assertEqual(g.estado, EstadoGastoChoices.BORRADOR)
         self.assertEqual(f.gasto_id, g.id)
@@ -178,6 +184,7 @@ class FinanzasServicesTests(TestCase):
                     obra=self.obra, proveedor=self.proveedor,
                     folio='F-2', fecha_emision=date(2026, 2, 1),
                     total=Decimal('5000'),
+                    usuario=self.user,
                 )
                 raise _Boom()
         self.assertEqual(GastoObra.objects.count(), 0)
@@ -190,6 +197,7 @@ class FinanzasServicesTests(TestCase):
             obra=self.obra, fecha=date(2026, 2, 15),
             periodo_desde=date(2026, 2, 1), periodo_hasta=date(2026, 2, 15),
             detalles=[{'empleado': self.empleado, 'monto': Decimal('7500.00')}],
+            usuario=self.user,
         )
         self.assertEqual(g.monto, Decimal('7500.00'))
         self.assertEqual(n.gasto_id, g.id)
@@ -201,6 +209,7 @@ class FinanzasServicesTests(TestCase):
         g, u = crear_uso_maquinaria_con_gasto(
             obra=self.obra, maquinaria=self.maquinaria,
             fecha=date(2026, 3, 1), horas=Decimal('8'),
+            usuario=self.user,
         )
         # 8h * 300/h = 2400
         self.assertEqual(g.monto, Decimal('2400.00'))
@@ -212,6 +221,7 @@ class FinanzasServicesTests(TestCase):
             obra=self.obra, fecha=date(2026, 4, 1),
             concepto='Multa', comprobante='COMP-1',
             monto=Decimal('1500.00'),
+            usuario=self.user,
         )
         self.assertEqual(g.monto, Decimal('1500.00'))
         self.assertEqual(otro.gasto_id, g.id)
@@ -221,6 +231,8 @@ class FinanzasServicesTests(TestCase):
 
 class ConstraintsTests(TestCase):
     def setUp(self):
+        from django.contrib.auth.models import User
+        self.user = User.objects.create_user(username='tester', password='x')
         self.obra = Obra.objects.create(codigo=f'OBR-TEST-{uuid.uuid4().hex[:8]}', nombre='Obra', ubicacion='X',
             fecha_inicio=date(2026, 1, 1),
             fecha_fin_estimada=date(2026, 12, 31),
@@ -235,11 +247,13 @@ class ConstraintsTests(TestCase):
         crear_gasto_con_factura(
             obra=self.obra, proveedor=self.proveedor,
             folio='F-100', fecha_emision=date(2026, 2, 1), total=Decimal('100'),
+            usuario=self.user,
         )
         with self.assertRaises(IntegrityError):
             crear_gasto_con_factura(
                 obra=self.obra, proveedor=self.proveedor,
                 folio='F-100', fecha_emision=date(2026, 3, 1), total=Decimal('200'),
+                usuario=self.user,
             )
 
     def test_inventario_unico_por_obra_y_material(self):

@@ -140,6 +140,21 @@ class UsoCreateView(LoginRequiredMixin, CreateView):
             initial['obra'] = obra_id
         return initial
 
+    def form_valid(self, form):
+        from apps.finanzas.services import crear_uso_maquinaria_con_gasto
+        from apps.core.choices import EstadoGastoChoices as EC, TipoGastoChoices as TC
+        _gasto, uso = crear_uso_maquinaria_con_gasto(
+            obra=form.cleaned_data['obra'],
+            maquinaria=form.cleaned_data['maquinaria'],
+            fecha=form.cleaned_data['fecha'],
+            horas=form.cleaned_data['horas'],
+            tipo_gasto=TC.MAQUINARIA,
+            estado=EC.BORRADOR,
+            usuario=self.request.user,
+        )
+        self.object = uso
+        return self.response_class()
+
     def get_success_url(self):
         obra_id = self.request.GET.get('obra') or self.request.POST.get('obra')
         if obra_id:

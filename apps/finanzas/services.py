@@ -64,10 +64,12 @@ def crear_gasto_con_factura(*, obra, proveedor, folio, fecha_emision,
                               descripcion='', tipo_gasto=TipoGastoChoices.MATERIAL,
                               estado=EstadoGastoChoices.BORRADOR,
                               estado_factura=EstadoFacturaChoices.PENDIENTE,
-                              fecha_gasto=None):
+                              fecha_gasto=None, usuario):
     """Crea GastoObra + FacturaProveedor en una sola transacción.
 
     Si algo falla, ROLLBACK.
+
+    `usuario` es OBLIGATORIO (spec v1.2 - trazabilidad).
 
     El `total` de la FacturaProveedor debe ser consistente con
     suma(subtotal de DetalleFactura) + impuesto. Esta validación se
@@ -75,6 +77,8 @@ def crear_gasto_con_factura(*, obra, proveedor, folio, fecha_emision,
     """
     if fecha_gasto is None:
         fecha_gasto = fecha_emision
+    if usuario is None:
+        raise ValueError('usuario es obligatorio al crear un gasto.')
     gasto = GastoObra.objects.create(
         obra=obra,
         fecha=fecha_gasto,
@@ -82,6 +86,7 @@ def crear_gasto_con_factura(*, obra, proveedor, folio, fecha_emision,
         descripcion=descripcion,
         monto=total,
         estado=estado,
+        usuario=usuario,
     )
     factura = FacturaProveedor.objects.create(
         obra=obra,
@@ -100,11 +105,14 @@ def crear_gasto_con_factura(*, obra, proveedor, folio, fecha_emision,
 def crear_otro_gasto(*, obra, fecha, concepto, comprobante='', proveedor=None,
                        observaciones='', tipo_gasto=TipoGastoChoices.OTROS,
                        monto=Decimal('0.00'),
-                       estado=EstadoGastoChoices.BORRADOR):
+                       estado=EstadoGastoChoices.BORRADOR, usuario):
     """Crea GastoObra + OtroGasto atómicamente.
 
     El monto vive en GastoObra. OtroGasto NO mantiene monto propio.
+    `usuario` es OBLIGATORIO.
     """
+    if usuario is None:
+        raise ValueError('usuario es obligatorio al crear un gasto.')
     gasto = GastoObra.objects.create(
         obra=obra,
         fecha=fecha,
@@ -112,6 +120,7 @@ def crear_otro_gasto(*, obra, fecha, concepto, comprobante='', proveedor=None,
         descripcion=concepto,
         monto=monto,
         estado=estado,
+        usuario=usuario,
     )
     otro = OtroGasto.objects.create(
         obra=obra,
@@ -128,12 +137,15 @@ def crear_otro_gasto(*, obra, fecha, concepto, comprobante='', proveedor=None,
 @transaction.atomic
 def crear_nomina_con_gasto(*, obra, fecha, periodo_desde, periodo_hasta,
                               detalles, tipo_gasto=TipoGastoChoices.PERSONAL,
-                              estado=EstadoGastoChoices.BORRADOR):
+                              estado=EstadoGastoChoices.BORRADOR, usuario):
     """Crea Nomina + GastoObra + NominaDetalle atómicamente.
 
+    `usuario` es OBLIGATORIO.
     detalles: lista de dicts {empleado, monto}
     """
     from apps.personal.models import Nomina, NominaDetalle
+    if usuario is None:
+        raise ValueError('usuario es obligatorio al crear un gasto.')
 
     total = sum((d['monto'] for d in detalles), Decimal('0.00'))
     gasto = GastoObra.objects.create(
@@ -143,6 +155,7 @@ def crear_nomina_con_gasto(*, obra, fecha, periodo_desde, periodo_hasta,
         descripcion=f'Nómina {periodo_desde} - {periodo_hasta}',
         monto=total,
         estado=estado,
+        usuario=usuario,
     )
     nomina = Nomina.objects.create(
         obra=obra,
@@ -163,12 +176,15 @@ def crear_nomina_con_gasto(*, obra, fecha, periodo_desde, periodo_hasta,
 @transaction.atomic
 def crear_uso_maquinaria_con_gasto(*, obra, maquinaria, fecha, horas,
                                      tipo_gasto=TipoGastoChoices.MAQUINARIA,
-                                     estado=EstadoGastoChoices.BORRADOR):
+                                     estado=EstadoGastoChoices.BORRADOR, usuario):
     """Crea UsoMaquinaria + GastoObra atómicamente.
 
     El monto se calcula como horas * costo_hora de la maquinaria.
+    `usuario` es OBLIGATORIO.
     """
     from apps.maquinaria.models import UsoMaquinaria
+    if usuario is None:
+        raise ValueError('usuario es obligatorio al crear un gasto.')
 
     monto = (horas or Decimal('0.00')) * (maquinaria.costo_hora or Decimal('0.00'))
     gasto = GastoObra.objects.create(
@@ -178,6 +194,7 @@ def crear_uso_maquinaria_con_gasto(*, obra, maquinaria, fecha, horas,
         descripcion=f'Uso de {maquinaria.nombre} ({horas} h)',
         monto=monto,
         estado=estado,
+        usuario=usuario,
     )
     uso = UsoMaquinaria.objects.create(
         obra=obra,
@@ -194,11 +211,39 @@ def crear_uso_maquinaria_con_gasto(*, obra, maquinaria, fecha, horas,
 # ---------------------------------------------------------------------------
 @transaction.atomic
 def anular_gasto(gasto: GastoObra):
-    """Anula un gasto sin borrarlo (regla: no borrar físicamente)."""
+    """Anula un gasto sin borrarlo (regla: no borrar físicamente).
+
+    Spec v1.2: es la única manera de cancelar un gasto aprobado o
+    corregir errores. La fila permanece en la BD con estado=ANULADO.
+    """
     if gasto.estado == EstadoGastoChoices.ANULADO:
         return gasto
     gasto.estado = EstadoGastoChoices.ANULADO
     gasto.save(update_fields=['estado', 'updated_at'])
+    return gasto
+
+
+@transaction.atomic
+def sincronizar_factura_gasto(factura, *, usuario):
+    """Sincroniza el monto de un GastoObra con el `total` de la factura.
+
+    Regla (spec v1.2, problema 6): `Factura.total` y `GastoObra.monto`
+    deben estar sincronizados. Si la factura cambia su `total`, el
+    gasto asociado debe actualizarse atómicamente. Si algo falla,
+    ROLLBACK.
+
+    Esta función está disponible para escenarios donde se permite
+    edición del total (con reasignación explícita). En el MVP, esta
+    operación se invoca solo desde una acción administrativa.
+    """
+    if usuario is None:
+        raise ValueError('usuario es obligatorio.')
+    gasto = factura.gasto
+    if gasto.estado == EstadoGastoChoices.ANULADO:
+        raise ValueError('No se puede sincronizar un gasto ANULADO.')
+    if gasto.monto != factura.total:
+        gasto.monto = factura.total
+        gasto.save(update_fields=['monto', 'updated_at'])
     return gasto
 
 

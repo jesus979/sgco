@@ -16,6 +16,8 @@ urlpatterns = [
     path('nominas/<int:pk>/editar/', views.NominaUpdateView.as_view(), name='nomina_update'),
     path('nominas/<int:pk>/recalcular/', views.NominaRecalcularView.as_view(), name='nomina_recalcular'),
     path('nominas/<int:pk>/anular/', views.NominaAnularView.as_view(), name='nomina_anular'),
+    # v1.2: NO existe ruta de borrado para nómina.
+    # Para cancelar, usar 'anular' que marca el gasto como ANULADO.
 
     path('nominas/detalles/', views.NominaDetalleListView.as_view(), name='nomina_detalle_list'),
     path('nominas/detalles/nuevo/', views.NominaDetalleCreateView.as_view(), name='nomina_detalle_create'),

@@ -14,7 +14,7 @@ urlpatterns = [
     path('facturas/nueva/', views.FacturaCreateView.as_view(), name='factura_create'),
     path('facturas/<int:pk>/', views.FacturaDetailView.as_view(), name='factura_detail'),
     path('facturas/<int:pk>/editar/', views.FacturaUpdateView.as_view(), name='factura_update'),
-    path('facturas/<int:pk>/eliminar/', views.FacturaDeleteView.as_view(), name='factura_delete'),
+    # v1.2: NO existe ruta de borrado para factura (debe anularse el gasto).
 
     path('facturas/detalles/', views.DetalleFacturaListView.as_view(), name='detalle_list'),
     path('facturas/detalles/nuevo/', views.DetalleFacturaCreateView.as_view(), name='detalle_create'),

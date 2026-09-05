@@ -51,7 +51,7 @@ class ProveedoresFrontendTests(TestCase):
             obra=self.obra, proveedor=self.proveedor,
             folio='F-1', fecha_emision=date(2026, 2, 1),
             total=Decimal('100'), impuesto=Decimal('16'),
-        )
+            usuario=self.user,)
         r = self.client.get(reverse('proveedores:factura_list'))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'F-1')
@@ -66,7 +66,7 @@ class ProveedoresFrontendTests(TestCase):
             obra=self.obra, proveedor=self.proveedor,
             folio='F-CONS', fecha_emision=date(2026, 2, 1),
             total=Decimal('500'), impuesto=Decimal('80'),
-        )
+            usuario=self.user,)
         DetalleFactura.objects.create(
             factura=f, material=m,
             cantidad=Decimal('2'), precio_unitario=Decimal('210'),
@@ -81,7 +81,7 @@ class ProveedoresFrontendTests(TestCase):
             obra=self.obra, proveedor=self.proveedor,
             folio='F-INC', fecha_emision=date(2026, 2, 1),
             total=Decimal('999'),
-        )
+            usuario=self.user,)
         r = self.client.get(reverse('proveedores:factura_detail', args=[f.pk]))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'Esperado')
@@ -92,7 +92,7 @@ class ProveedoresFrontendTests(TestCase):
             obra=self.obra, proveedor=self.proveedor,
             folio='F-D', fecha_emision=date(2026, 2, 1),
             total=Decimal('100'),
-        )
+            usuario=self.user,)
         DetalleFactura.objects.create(
             factura=f, material=m,
             cantidad=Decimal('1'), precio_unitario=Decimal('100'),
@@ -199,7 +199,7 @@ class PersonalFrontendTests(TestCase):
             periodo_desde=date(2026, 2, 1), periodo_hasta=date(2026, 2, 15),
             detalles=[{'empleado': self.empleado, 'monto': Decimal('1000')}],
             estado=EstadoGastoChoices.APROBADO,
-        )
+            usuario=self.user,)
         r = self.client.post(reverse('personal:nomina_recalcular', args=[n.pk]))
         self.assertEqual(r.status_code, 302)
         n.gasto.refresh_from_db()
@@ -212,7 +212,7 @@ class PersonalFrontendTests(TestCase):
             periodo_desde=date(2026, 2, 1), periodo_hasta=date(2026, 2, 15),
             detalles=[{'empleado': self.empleado, 'monto': Decimal('1000')}],
             estado=EstadoGastoChoices.APROBADO,
-        )
+            usuario=self.user,)
         r = self.client.post(reverse('personal:nomina_anular', args=[n.pk]))
         self.assertEqual(r.status_code, 302)
         g.refresh_from_db()
@@ -226,7 +226,7 @@ class PersonalFrontendTests(TestCase):
             periodo_desde=date(2026, 2, 1), periodo_hasta=date(2026, 2, 15),
             detalles=[{'empleado': self.empleado, 'monto': Decimal('1000')}],
             estado=EstadoGastoChoices.APROBADO,
-        )
+            usuario=self.user,)
         r = self.client.get(f"{reverse('personal:nomina_detalle_list')}?nomina={n.pk}")
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, self.empleado.nombre_completo)
@@ -265,7 +265,7 @@ class MaquinariaFrontendTests(TestCase):
             obra=self.obra, maquinaria=self.maquinaria,
             fecha=date(2026, 2, 1), horas=Decimal('10'),
             estado=EstadoGastoChoices.APROBADO,
-        )
+            usuario=self.user,)
         r = self.client.get(reverse('maquinaria:uso_list'))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'Excavadora')

@@ -67,8 +67,6 @@ class GastoObra(models.Model):
     usuario = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
-        null=True,
-        blank=True,
         related_name='gastos_creados',
     )
     observaciones = models.TextField(blank=True)
@@ -91,6 +89,74 @@ class GastoObra(models.Model):
         super().clean()
         if self.monto is not None and self.monto <= Decimal('0'):
             raise ValidationError({'monto': 'El monto debe ser mayor a 0.'})
+        if not self.usuario_id:
+            raise ValidationError(
+                {'usuario': 'El usuario responsable es obligatorio.'}
+            )
+
+    def save(self, *args, **kwargs):
+        """Valida inmutabilidad de campos financieros en estados terminales.
+
+        - BORRADOR: editable (todos los campos).
+        - APROBADO: solo campos no financieros (concepto, descripcion,
+          observaciones). obra/monto/tipo_gasto NO se pueden modificar.
+        - ANULADO: inmutable. No se puede modificar nada.
+
+        La operación correcta para corregir un gasto aprobado o
+        anulado es: ANULAR + crear nuevo gasto.
+        """
+        if self.pk is not None:
+            try:
+                original = GastoObra.objects.get(pk=self.pk)
+            except GastoObra.DoesNotExist:
+                original = None
+            if original is not None:
+                if original.estado == EstadoGastoChoices.ANULADO:
+                    raise ValidationError(
+                        {'__all__': 'Un gasto ANULADO no se puede modificar.'}
+                    )
+                if original.estado == EstadoGastoChoices.APROBADO:
+                    errors = {}
+                    if self.obra_id != original.obra_id:
+                        errors['obra'] = (
+                            'No se puede cambiar la obra de un gasto APROBADO. '
+                            'Anule el gasto y cree uno nuevo.'
+                        )
+                    if self.monto != original.monto:
+                        errors['monto'] = (
+                            'No se puede cambiar el monto de un gasto APROBADO. '
+                            'Anule el gasto y cree uno nuevo.'
+                        )
+                    if self.tipo_gasto != original.tipo_gasto:
+                        errors['tipo_gasto'] = (
+                            'No se puede cambiar el tipo de un gasto APROBADO. '
+                            'Anule el gasto y cree uno nuevo.'
+                        )
+                    if errors:
+                        raise ValidationError(errors)
+        super().save(*args, **kwargs)
+
+    @property
+    def es_borrador(self) -> bool:
+        return self.estado == EstadoGastoChoices.BORRADOR
+
+    @property
+    def es_aprobado(self) -> bool:
+        return self.estado == EstadoGastoChoices.APROBADO
+
+    @property
+    def es_anulado(self) -> bool:
+        return self.estado == EstadoGastoChoices.ANULADO
+
+    @property
+    def es_editable_completo(self) -> bool:
+        """En BORRADOR se puede editar todo."""
+        return self.es_borrador
+
+    @property
+    def es_editable_solo_descriptivo(self) -> bool:
+        """En APROBADO solo se pueden modificar campos descriptivos."""
+        return self.es_aprobado
 
     @property
     def afecta_saldo(self) -> bool:

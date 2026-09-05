@@ -18,6 +18,8 @@ from .services import (
 
 class FacturaConsistenciaTests(TestCase):
     def setUp(self):
+        from django.contrib.auth.models import User
+        self.user = User.objects.create_user('tester', password='x')
         self.obra = Obra.objects.create(codigo=f'OBR-TEST-{uuid.uuid4().hex[:8]}', nombre='Obra', ubicacion='X',
             fecha_inicio=date(2026, 1, 1),
             fecha_fin_estimada=date(2026, 12, 31),
@@ -33,7 +35,7 @@ class FacturaConsistenciaTests(TestCase):
             obra=self.obra, proveedor=self.proveedor,
             folio='F-CONS', fecha_emision=date(2026, 2, 1),
             total=total, impuesto=impuesto,
-        )
+            usuario=self.user,)
         return f
 
     def test_subtotal_vacio_es_cero(self):

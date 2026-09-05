@@ -48,7 +48,7 @@ class SmokeFrontendTests(TestCase):
             tipo_gasto=TipoGastoChoices.MATERIAL,
             monto=Decimal('5000'),
             estado=EstadoGastoChoices.APROBADO,
-        )
+            usuario=self.user,)
 
     # --------------------------- OBRAS ---------------------------
     def test_obras_list(self):
@@ -126,7 +126,7 @@ class SmokeFrontendTests(TestCase):
             obra=self.obra, fecha=date(2026, 3, 1),
             tipo_gasto=TipoGastoChoices.OTROS,
             monto=Decimal('1000'), estado=EstadoGastoChoices.APROBADO,
-        )
+            usuario=self.user,)
         otro = OtroGasto.objects.create(
             obra=self.obra, gasto=gasto, fecha=date(2026, 3, 1),
             concepto='Multa', comprobante='COMP-1',
@@ -142,7 +142,7 @@ class SmokeFrontendTests(TestCase):
             obra=self.obra, fecha=date(2026, 3, 1),
             tipo_gasto=TipoGastoChoices.OTROS,
             monto=Decimal('1000'), estado=EstadoGastoChoices.APROBADO,
-        )
+            usuario=self.user,)
         OtroGasto.objects.create(
             obra=self.obra, gasto=gasto, fecha=date(2026, 3, 1),
             concepto='Multa', comprobante='COMP-1',

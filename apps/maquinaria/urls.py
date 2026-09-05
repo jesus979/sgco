@@ -8,7 +8,8 @@ urlpatterns = [
     path('nueva/', views.MaquinariaCreateView.as_view(), name='maquinaria_create'),
     path('<int:pk>/', views.MaquinariaDetailView.as_view(), name='maquinaria_detail'),
     path('<int:pk>/editar/', views.MaquinariaUpdateView.as_view(), name='maquinaria_update'),
-    path('<int:pk>/eliminar/', views.MaquinariaDeleteView.as_view(), name='maquinaria_delete'),
+    # v1.2: Maquinaria NO se borra físicamente si tiene usos.
+    # Se desactiva la opción de eliminación. La gestión es por 'activo=False'.
 
     path('usos/', views.UsoListView.as_view(), name='uso_list'),
     path('usos/nuevo/', views.UsoCreateView.as_view(), name='uso_create'),

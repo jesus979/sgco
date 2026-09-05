@@ -73,7 +73,9 @@ class GastoObraCreateView(LoginRequiredMixin, CreateView):
         return initial
 
     def form_valid(self, form):
-        # Asignamos automáticamente el usuario autenticado
+        # Asignamos automáticamente el usuario autenticado.
+        # En BORRADOR se puede editar; al pasar a APROBADO, los
+        # campos financieros quedan bloqueados a nivel de modelo.
         form.instance.usuario = self.request.user
         return super().form_valid(form)
 
@@ -91,8 +93,38 @@ class GastoObraCreateView(LoginRequiredMixin, CreateView):
 
 
 class GastoObraUpdateView(LoginRequiredMixin, UpdateView):
+    """Editar gasto.
+
+    Regla (spec v1.2, problema 4):
+    - BORRADOR: editable en su totalidad.
+    - APROBADO: solo campos descriptivos (concepto, descripcion,
+      observaciones). obra/monto/tipo_gasto NO se pueden modificar.
+    - ANULADO: inmutable.
+
+    En esta vista (form fields), exponemos solo los campos seguros.
+    El modelo `GastoObra.save()` actúa como segunda línea de defensa.
+    """
     model = GastoObra
-    fields = ['obra', 'fecha', 'tipo_gasto', 'concepto', 'descripcion', 'monto', 'estado']
+
+    def get_form_class(self):
+        from django import forms
+        if self.object.es_editable_completo:
+            class Form(forms.ModelForm):
+                class Meta:
+                    model = GastoObra
+                    fields = ['obra', 'fecha', 'tipo_gasto', 'concepto', 'descripcion', 'monto', 'estado']
+            return Form
+        elif self.object.es_editable_solo_descriptivo:
+            class Form(forms.ModelForm):
+                class Meta:
+                    model = GastoObra
+                    fields = ['concepto', 'descripcion', 'observaciones']
+            return Form
+        else:
+            # ANULADO: inmutable
+            from django.http import Http404
+            raise Http404('Este gasto está anulado y no se puede modificar.')
+
     template_name = 'sgco/_form_page.html'
     success_url = reverse_lazy('finanzas:gasto_list')
 
@@ -100,6 +132,7 @@ class GastoObraUpdateView(LoginRequiredMixin, UpdateView):
         ctx = super().get_context_data(**kwargs)
         ctx['model_name'] = 'Gasto de Obra'
         ctx['is_update'] = True
+        ctx['solo_descriptivo'] = self.object.es_editable_solo_descriptivo
         return ctx
 
 
@@ -201,10 +234,8 @@ class OtroGastoCreateView(LoginRequiredMixin, CreateView):
             tipo_gasto=TC.OTROS,
             monto=Decimal('0.00'),
             estado=EC.BORRADOR,
+            usuario=self.request.user,
         )
-        # Actualizar el gasto con la info de usuario
-        gasto.usuario = self.request.user
-        gasto.save(update_fields=['usuario', 'updated_at'])
         # Sobrescribir el save por defecto: en lugar de crear OtroGasto nuevo,
         # vinculamos al recién creado.
         form.instance = _otro  # ya tiene gasto asociado

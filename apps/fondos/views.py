@@ -63,6 +63,11 @@ class AsignacionFondoCreateView(LoginRequiredMixin, CreateView):
             initial['obra'] = obra_id
         return initial
 
+    def form_valid(self, form):
+        # Asignar el usuario autenticado
+        form.instance.usuario = self.request.user
+        return super().form_valid(form)
+
     def get_success_url(self):
         obra_id = self.request.GET.get('obra') or self.request.POST.get('obra')
         if obra_id:
@@ -77,8 +82,15 @@ class AsignacionFondoCreateView(LoginRequiredMixin, CreateView):
 
 
 class AsignacionFondoUpdateView(LoginRequiredMixin, UpdateView):
+    """Editar asignación.
+
+    Regla de inmutabilidad: NO se permite modificar obra, monto ni
+    tipo. El modelo `AsignacionFondo.save()` lo valida y lanza
+    ValidationError. El form solo expone los campos seguros
+    (referencia, observaciones).
+    """
     model = AsignacionFondo
-    fields = ['obra', 'fecha', 'tipo', 'monto', 'referencia', 'observaciones']
+    fields = ['referencia', 'observaciones']
     template_name = 'sgco/_form_page.html'
 
     def get_success_url(self):

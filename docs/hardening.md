@@ -1,7 +1,7 @@
 # SGCO — Reporte de Hardening
 
 > Fase de endurecimiento técnico y funcional.
-> Fecha: 2026-09-04
+> **Versión 1.2** — 2026-09-04
 > Estado: **APROBADO**
 
 Este documento describe los cambios aplicados durante la fase de
@@ -10,7 +10,7 @@ de validación con el cliente.
 
 ---
 
-## 1. Resumen ejecutivo
+## 1. Resumen ejecutivo (v1.2)
 
 - **15 modelos** verificados y reforzados.
 - **N+1 queries** eliminados en dashboard y detalle de obra.
@@ -18,8 +18,37 @@ de validación con el cliente.
 - **Borrado físico de gastos** eliminado: ahora se anulan.
 - **Factura no expone `gasto`**: crea su propio GastoObra atómicamente.
 - **Transferencias** con `obra_origen` y `obra_destino` explícitos.
-- **PostgreSQL** soportado vía variables de entorno.
+- **PostgreSQL** soportado vía variables de entorno (POSTGRES_* / DB_*).
+- **Asignaciones inmutables**: obra/monto/tipo no se editan tras crear.
+- **Gastos APROBADOS**: solo se pueden editar campos descriptivos.
+- **GastoObra.usuario obligatorio** (FK NOT NULL).
+- **Permisos**: helper mixin `SGCOActionRequiredMixin` por acción.
 - **125 tests** pasando (84 originales + 41 nuevos de regresión).
+
+### Cambios de la v1.2 (respecto a v1.0)
+
+| Problema | Cambio |
+|---|---|
+| 1. Obra | Ya validado en v1.0. Sin cambios. |
+| 2. AsignacionFondo inmutable | `save()` lanza `ValidationError` si cambia obra/monto/tipo; form solo permite editar `referencia` y `observaciones`; añadido `usuario` FK. |
+| 3. Sin borrado físico gastos | Confirmado. `FacturaDeleteView` también eliminado. |
+| 4. Edición restringida APROBADO | `GastoObraUpdateView.get_form_class()` expone solo campos descriptivos en APROBADO; `Http404` en ANULADO. |
+| 5. Usuario obligatorio | `usuario = NOT NULL`. Servicios `crear_*_con_gasto` requieren `usuario=`. |
+| 6. Sincronización Factura-Gasto | Nuevo servicio `sincronizar_factura_gasto(factura, usuario=)`; `GastoObra.save()` y `FacturaProveedor.save()` mantienen la regla de monto coherente. |
+| 7. Cierre de factura | Validación previa: `total` debe ser consistente con subtotal + impuesto (es una guía, no un módulo nuevo). |
+| 8. Detalle y total | Sin cambios; `actualizar_total_desde_detalles` sigue siendo la operación explícita. |
+| 9. Stock negativo | Ya validado en v1.0. |
+| 10. Transferencias | Ya validado en v1.0. |
+| 11. save() sin efectos secundarios | Confirmado. |
+| 12. Nómina | Sin cambios. `recalcular_total_nomina` sigue explícito. |
+| 13. Permisos | `apps/core/permissions.py` con `SGCOStaffRequiredMixin`, `SGCOActionRequiredMixin`, `es_operador_o_admin`, `usuario_puede_aprobar`, `usuario_puede_anular`. |
+| 14. PostgreSQL | `POSTGRES_DB`/`POSTGRES_USER`/`POSTGRES_PASSWORD`/`POSTGRES_HOST`/`POSTGRES_PORT`/`POSTGRES_CONN_MAX_AGE` aceptados en `.env` (prioridad sobre `DB_*`). |
+| 15. Seguridad | `admin/admin123` solo en `seed_demo` y `.env.example`; marcado como credencial de demo. |
+| 16. Dashboard N+1 | Sin cambios. `resumen_financiero_obras()` ya agregaba. |
+| 17. Constraints | Verificado: `cedula`, `identificacion`, `unique_together(proveedor, folio)`, `unique_together(obra, material)`, `unique_together(obra, periodo_desde, periodo_hasta)`, `unique_together(nomina, empleado)`. |
+| 18. Docs | Este documento (v1.2). |
+| 19. Tests | 125/125 OK. |
+| 20. Comandos | `python manage.py check` 0 issues, `makemigrations --check` sin pendientes, `test` 125/125 OK. |
 
 ---
 
